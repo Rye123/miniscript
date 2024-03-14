@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 Converts the TokenType enum of token.h into a map of strings.
 For instance, the following enum:
