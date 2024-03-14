@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include "../lib/list.h"
+#include "lib/list.h"
 #include "lexer/token.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"

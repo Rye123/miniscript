@@ -2,7 +2,7 @@
 #define _LEXER_H_
 
 #include "token.h"
-#include "../../lib/list.h"
+#include "../lib/list.h"
 
 /*
 Performs lexical analysis on `source`, storing the tokens in the dynamic list `tokenLs`.

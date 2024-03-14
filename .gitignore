@@ -1,3 +1,9 @@
 .ccls-cache/
 .DS_Store
 .vscode/
+
+# Object Files
+*.o
+
+# Executables
+interpreter

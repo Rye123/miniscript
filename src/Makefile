@@ -1,8 +1,21 @@
+SUBDIRS = lib lexer parser
 INTERPRETER_OUT=interpreter
-INTERPRETER_DEP=interpreter.o
+INTERPRETER_DEP=interpreter.o parser/parser.o lexer/lexer.o lib/list.o
+
+.PHONY: subdirs $(SUBDIRS)
+
+all: interpreter
+subdirs: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+parser: lib
+lexer: lib
+
 
 interpreter: $(INTERPRETER_DEP)
-	$(CC) interpreter.o -o $(INTERPRETER_OUT)
+	$(CC) $(INTERPRETER_DEP) -o $(INTERPRETER_OUT)
 
 interpreter.o: interpreter.c
 	$(CC) interpreter.c -c -o interpreter.o
