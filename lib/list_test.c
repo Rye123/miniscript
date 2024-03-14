@@ -29,8 +29,17 @@ int main()
     int exp_arr_1[5] = {1, 2, 3, 4, 5};
     int *res_ls_1 = malloc(5 * sizeof(int));
     List *test_ls_1 = list_create(sizeof(int));
-    for (int i = 0; i < 5; i++)
-        list_add_item(test_ls_1,  exp_arr_1 + i);
+    int matched_size_1 = 1;
+    for (int i = 0; i < 5; i++) {
+        list_add_item(test_ls_1, exp_arr_1 + i);
+        if (test_ls_1->size != (i+1)) {
+            sprintf(errMsg, "test_ls_1->size = %ld, expected %d", test_ls_1->size, i+1);
+            matched_size_1 = 0;
+            break;
+        }
+    }
+    test_assert(matched_size_1, "test_ls_1 is size 5", errMsg);
+    
     res_ls_1 = (int*) list_to_arr(test_ls_1, (void *) res_ls_1);
     int matched_1 = 1;
     for (int i = 0; i < 5; i++) {
