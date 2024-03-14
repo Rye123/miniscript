@@ -26,17 +26,17 @@ void list_add_item(List *ls, const void *data);
 /*
 Returns an array of pointers to the values of the list. This takes a PRE-ALLOCATED array and overwrites the values inside with the array of pointers.
 
-Remember to typecast and then dereference to pointers. 
+Remember to typecast the returned array.. 
 For instance, if we have a list of integers `List *ls`:
 ```c
-int **arr = malloc(ls->size * sizeof(int *));
-arr = (int **) list_to_arr(ls, (void **) arr);
+int *arr = malloc(ls->size * sizeof(int));
+arr = (int *) list_to_arr(ls, (void *) arr);
 for (int i = 0; i < ls->size; i++) {
-    printf("%d\n", *(arr[i]));
+    printf("%d\n", arr[i]);
 }
 ```
 */
-void** list_to_arr(List *ls, void **arr);
+void* list_to_arr(List *ls, void *arr);
 
 void list_free(List *ls);
 
