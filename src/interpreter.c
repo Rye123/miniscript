@@ -2,11 +2,42 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include "../lib/list.h"
+#include "lexer/token.h"
+#include "lexer/lexer.h"
+#include "parser/parser.h"
 #define LINE_MAX 255
 
 void runLine(const char* source)
 {
     printf("ENTERED: %s\n", source);
+    
+    // Lexical Analysis
+    // 1. Initialisation
+    Token** tokens = NULL;
+    size_t tokenCount = -1;
+    List* tokenLs = list_create(sizeof(Token));
+
+    // 2. Lexing
+    lex(source, tokenLs);
+
+    // 3. Store array of tokens
+    tokens = malloc(tokenLs->size * sizeof(Token));
+    tokens = list_to_arr(tokenLs, tokens);
+    tokenCount = tokenLs->size;
+    list_free(tokenLs);
+    
+    // Syntactic Analysis
+    // 1. Initialisation
+    /* TODO: Initialise syntax tree */
+
+    // 2. Parsing
+    parse(tokens, tokenCount);    /* TODO: Add syntax tree to arguments */
+
+    // Execution
+
+    // Cleanup
+    free(tokens);
 }
 
 void runFile(const char* fname)
