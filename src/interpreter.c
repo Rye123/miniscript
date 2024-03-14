@@ -11,33 +11,31 @@
 void runLine(const char* source)
 {
     printf("ENTERED: %s\n", source);
-    
     // Lexical Analysis
     // 1. Initialisation
-    Token** tokens = NULL;
     size_t tokenCount = -1;
     List* tokenLs = list_create(sizeof(Token));
-
     // 2. Lexing
     lex(source, tokenLs);
 
     // 3. Store array of tokens
-    tokens = malloc(tokenLs->size * sizeof(Token));
-    tokens = list_to_arr(tokenLs, tokens);
-    tokenCount = tokenLs->size;
-    list_free(tokenLs);
+    // Token** tokens = NULL;
+    // tokens = malloc(tokenLs->size * sizeof(Token));
+    // tokens = list_to_arr(tokenLs, tokens);
+    // tokenCount = tokenLs->size;
+    // list_free(tokenLs);
     
     // Syntactic Analysis
     // 1. Initialisation
     /* TODO: Initialise syntax tree */
 
     // 2. Parsing
-    parse(tokens, tokenCount);    /* TODO: Add syntax tree to arguments */
+    // parse(tokens, tokenCount);    /* TODO: Add syntax tree to arguments */
 
     // Execution
 
     // Cleanup
-    free(tokens);
+    // free(tokens);
 }
 
 void runFile(const char* fname)

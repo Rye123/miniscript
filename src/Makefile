@@ -1,6 +1,6 @@
 SUBDIRS = lib lexer parser
 INTERPRETER_OUT=interpreter
-INTERPRETER_DEP=interpreter.o parser/parser.o lexer/lexer.o lib/list.o
+INTERPRETER_DEP=interpreter.o parser/parser.o lexer/lexer.o lib/list.o lexer/token.o
 
 .PHONY: subdirs $(SUBDIRS)
 

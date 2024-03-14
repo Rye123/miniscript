@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
+#include "../lexer/token.h"
 
 List *list_create(size_t elemSz)
 {
@@ -17,7 +18,8 @@ void list_add_item(List *ls, const void *data)
 {
     ListNode *node = malloc(sizeof(ListNode));
     node->data = malloc(ls->elemSz);
-    memcpy(node->data, data, ls->elemSz);
+    memcpy(node->data, data, ls->elemSz);    
+    // printListNode(node); //TODO: For debugging
     node->prev = NULL;
     node->next = NULL;
     
@@ -59,4 +61,11 @@ void list_free(List *ls)
         node = nextNode;
     }
     free(ls);
+}
+
+void printListNode(ListNode* listNode)
+{
+    int i;
+    Token *data = (Token *) ((*listNode).data);
+    printToken(data);
 }

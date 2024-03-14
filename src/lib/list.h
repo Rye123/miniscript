@@ -40,4 +40,6 @@ void* list_to_arr(List *ls, void *arr);
 
 void list_free(List *ls);
 
+void printListNode(ListNode* listNode);
+
 #endif
