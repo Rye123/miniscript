@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
-#include "../lexer/token.h"
 
 List *list_create(size_t elemSz)
 {
@@ -63,9 +62,3 @@ void list_free(List *ls)
     free(ls);
 }
 
-void printListNode(ListNode* listNode)
-{
-    int i;
-    Token *data = (Token *) ((*listNode).data);
-    printToken(data);
-}
