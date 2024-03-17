@@ -3,3 +3,6 @@ lexer.o: lexer.c
 
 token.o: token.c
 	$(CC) token.c -c token.o
+
+clean:
+	$(RM) -f *.o

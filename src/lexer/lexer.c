@@ -59,6 +59,8 @@ TokenType matchKeywordOrIdentifier(const char* candidate, const size_t candidate
         return TOKEN_END;
     else if (strnncmp(candidate, candidateLen, "break", 5))
         return TOKEN_BREAK;
+    else if (strnncmp(candidate, candidateLen, "then", 4))
+        return TOKEN_THEN;
     else if (strnncmp(candidate, candidateLen, "continue", 8))
         return TOKEN_CONTINUE;
     else if (strnncmp(candidate, candidateLen, "function", 8))
