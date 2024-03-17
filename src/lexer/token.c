@@ -5,7 +5,7 @@
 #include <float.h>
 #include "token.h"
 
-Token* createToken(TokenType type, const char* lexeme, const int lexemeLength, int lineNum)
+Token* createToken(TokenType type, const char* lexeme, const int lexemeLength, int lineNum, int colNum)
 {
   Token* ret = malloc(sizeof(Token));
 
@@ -24,9 +24,10 @@ Token* createToken(TokenType type, const char* lexeme, const int lexemeLength, i
     memcpy(ret, &tok, sizeof(Token));
   } else if (type == TOKEN_STRING) {
     Token tok = {type, lexeme_cpy, .literal.literal_str = lexeme_cpy, lineNum};
+    // TODO: remove first and last quotes
     memcpy(ret, &tok, sizeof(Token));
   } else {
-    Token tok = {type, lexeme_cpy, .literal.literal_null=NULL, lineNum};
+    Token tok = {type, lexeme_cpy, .literal.literal_null=NULL, lineNum, colNum};
     memcpy(ret, &tok, sizeof(Token));
   }
   return ret;
@@ -36,18 +37,6 @@ Token* createToken(TokenType type, const char* lexeme, const int lexemeLength, i
 bool exactMatch(const char* word, const char* test, const int testLen)
 {
   return testLen == strlen(word) && (strncmp(word, test, testLen) == 0);
-}
-
-TokenType matchTokenKeywordIdentifier(const char* lexeme, const int lexemeLength)
-{
-  //TODO: Update all possible keywords
-  if (exactMatch("and", lexeme, lexemeLength)) return TOKEN_AND;
-  else if (exactMatch("or", lexeme, lexemeLength)) return TOKEN_OR;
-  else if (exactMatch("if", lexeme, lexemeLength)) return TOKEN_IF;
-  else if (exactMatch("else", lexeme, lexemeLength)) return TOKEN_ELSE;
-  else if (exactMatch("while", lexeme, lexemeLength)) return TOKEN_WHILE;
-  else if (exactMatch("for", lexeme, lexemeLength)) return TOKEN_FOR;
-  return TOKEN_IDENTIFIER;
 }
 
 void printToken(Token *token)
