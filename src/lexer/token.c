@@ -5,7 +5,7 @@
 #include <float.h>
 #include "token.h"
 
-Token* createToken(TokenType type, const char* lexeme, const int lexemeLength, int lineNum, int colNum)
+Token* token_new(TokenType type, const char* lexeme, const int lexemeLength, int lineNum, int colNum)
 {
     Token* ret = malloc(sizeof(Token));
 
@@ -39,13 +39,12 @@ bool exactMatch(const char* word, const char* test, const int testLen)
     return testLen == strlen(word) && (strncmp(word, test, testLen) == 0);
 }
 
-void printToken(Token *token)
+void token_print(Token *token)
 {
-    // printf("Token: %s\n", TokenTypeString[token->type]);
-    printf("Token: %i, %s\n", token->type, token->lexeme);
+    printf("Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}\n", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
 }
 
-void freeToken(Token* token)
+void token_free(Token* token)
 {
     free(token->lexeme);
     free(token);

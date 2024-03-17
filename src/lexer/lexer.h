@@ -8,7 +8,4 @@
 Performs lexical analysis on `source`, storing the tokens in the dynamic list `tokenLs`.
 */
 void lex(const char *source, List* tokenLs);
-bool isDigit(char c);
-bool isAlpha(char c);
-bool isAlphaDigit(char c);
 #endif
