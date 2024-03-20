@@ -388,7 +388,7 @@ void lex(const char *source, List* tokenLs)
             size_t lexemeLen = lexEnd - lexStart;
             Token *tok = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
             token_print(tok);
-            list_add_item(tokenLs, &tok);
+            list_add_item(tokenLs, tok);
         }
 
         lexStart = lexEnd;

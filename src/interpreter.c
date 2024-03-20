@@ -14,16 +14,16 @@ void runLine(const char* source)
     // Lexical Analysis
     // 1. Initialisation
     size_t tokenCount = -1;
-    List* tokenLs = list_create(sizeof(Token *));
+    List* tokenLs = list_create(sizeof(Token));
     // 2. Lexing
     lex(source, tokenLs);
 
     // 3. Store array of tokens
-    Token** tokens = NULL;
-    tokens = malloc(tokenLs->size * sizeof(Token *));
-    tokens = list_to_arr(tokenLs, tokens);
-    tokenCount = tokenLs->size;
-    list_free(tokenLs);  // Frees the list itself, pointers inside are now in `tokens`
+    // Token** tokens = NULL;
+    // tokens = malloc(tokenLs->size * sizeof(Token *));
+    // tokens = list_to_arr(tokenLs, tokens);
+    // tokenCount = tokenLs->size;
+    // list_free(tokenLs);  // Frees the list itself, pointers inside are now in `tokens`
     
     // Syntactic Analysis
     // 1. Initialisation
@@ -35,11 +35,11 @@ void runLine(const char* source)
     // Execution
 
     // Cleanup
-    for (size_t i = 0; i < tokenCount; i++) {
-        // Free each token
-        token_free(tokens[i]);
-    }
-    free(tokens);
+    // for (size_t i = 0; i < tokenCount; i++) {
+    //     // Free each token
+    //     token_free(tokens[i]);
+    // }
+    // free(tokens);
 }
 
 void runFile(const char* fname)
@@ -89,15 +89,4 @@ void runREPL()
     }
 }
 
-int main(int argc, char** argv)
-{
-    if (argc == 1)
-        runREPL();
-    else if (argc == 2)
-        runFile(argv[1]);
-    else {
-        printf("Usage: ./interpreter [file]\n");
-        return 1;
-    }
-    return 0;
-}
+

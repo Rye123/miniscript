@@ -20,10 +20,10 @@ Token* token_new(TokenType type, const char* lexeme, const int lexemeLength, int
     if (type == TOKEN_NUMBER) {
         // Convert from string to double
         double literal_num = strtod(lexeme_cpy, NULL);
-        Token tok = {type, lexeme_cpy, .literal.literal_num=literal_num, lineNum};
+        Token tok = {type, lexeme_cpy, .literal.literal_num=literal_num, lineNum, colNum};
         memcpy(ret, &tok, sizeof(Token));
     } else if (type == TOKEN_STRING) {
-        Token tok = {type, lexeme_cpy, .literal.literal_str = lexeme_cpy, lineNum};
+        Token tok = {type, lexeme_cpy, .literal.literal_str = lexeme_cpy, lineNum, colNum};
         // TODO: remove first and last quotes
         memcpy(ret, &tok, sizeof(Token));
     } else {
@@ -31,6 +31,13 @@ Token* token_new(TokenType type, const char* lexeme, const int lexemeLength, int
         memcpy(ret, &tok, sizeof(Token));
     }
     return ret;
+}
+
+int token_compare(Token* actual, Token* expected){
+    printf("Comparing...\n");
+    token_print(actual);
+    token_print(expected);
+    return (actual->type == expected->type) && (actual->colNum == expected->colNum) && (strcmp(actual->lexeme, expected->lexeme)==0);
 }
 
 // Returns true if `test` is an exact match for `word`. `word` should be a null-terminated string.
@@ -42,6 +49,12 @@ bool exactMatch(const char* word, const char* test, const int testLen)
 void token_print(Token *token)
 {
     printf("Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}\n", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
+}
+
+void token_string(char* str, const Token *token)
+{
+    printf("Colnum:%d\n", token->colNum);
+    sprintf(str, "Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}\0", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
 }
 
 void token_free(Token* token)

@@ -13,6 +13,11 @@ $(SUBDIRS):
 parser: lib
 lexer: lib
 
+main: main.o interpreter.o parser/parser.o lexer/lexer.o lib/list.o lexer/token.o
+	$(CC) -o main main.o $(INTERPRETER_DEP)
+
+main.o: main.c
+	$(CC) main.c -c -o main.o
 
 interpreter: $(INTERPRETER_DEP)
 	$(CC) $(INTERPRETER_DEP) -o $(INTERPRETER_OUT)

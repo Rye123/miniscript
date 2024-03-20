@@ -17,8 +17,7 @@ void list_add_item(List *ls, const void *data)
 {
     ListNode *node = malloc(sizeof(ListNode));
     node->data = malloc(ls->elemSz);
-    memcpy(node->data, data, ls->elemSz);    
-    // printListNode(node); //TODO: For debugging
+    memcpy(node->data, data, ls->elemSz);
     node->prev = NULL;
     node->next = NULL;
     
