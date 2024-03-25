@@ -21,7 +21,7 @@ void parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
 
 
 /*
-Parses an array of tokens into a syntax tree.
+Performs syntax analysis on `tokens`, storing the AST in `root`.
 */
 void parse(ASTNode *root, Token** tokens, size_t tokenCount);
 

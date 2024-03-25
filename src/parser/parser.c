@@ -239,42 +239,42 @@ void parse(ASTNode *root, Token **tokens, size_t tokenCount)
     return;
 }
 
-int main()
-{
-    // 1 + 2
-    /*Token* tokens[] = {
-	token_new(TOKEN_NUMBER, "1", 1, 0, 1),
-	token_new(TOKEN_PLUS,   "+", 1, 0, 2),
-	token_new(TOKEN_NUMBER, "2", 1, 0, 3),
-	token_new(TOKEN_EOF, NULL, 0, 0, 4)
-      size_t tokenCount = 4;
-    };*/
+/* int main() */
+/* { */
+/*     // 1 + 2 */
+/*     /\*Token* tokens[] = { */
+/* 	token_new(TOKEN_NUMBER, "1", 1, 0, 1), */
+/* 	token_new(TOKEN_PLUS,   "+", 1, 0, 2), */
+/* 	token_new(TOKEN_NUMBER, "2", 1, 0, 3), */
+/* 	token_new(TOKEN_EOF, NULL, 0, 0, 4) */
+/*       size_t tokenCount = 4; */
+/*     };*\/ */
 
-    // 1 + 2 * 2 == 3 ==> (1 + (2 * 2)) == 3
-    Token* tokens[] = {
-	token_new(TOKEN_NUMBER,  "1", 1, 0, 1),
-	token_new(TOKEN_PLUS,    "+", 1, 0, 2),
-	token_new(TOKEN_NUMBER,  "2", 1, 0, 3),
-	token_new(TOKEN_STAR,    "*", 1, 0, 4),
-	token_new(TOKEN_NUMBER,  "2", 1, 0, 5),
-	token_new(TOKEN_EQUAL_EQUAL, "==", 2, 0, 6),
-	token_new(TOKEN_NUMBER,  "3", 1, 0, 8),
-	token_new(TOKEN_EOF, NULL, 0, 0, 4)
-    };
-    size_t tokenCount = 8;
+/*     // 1 + 2 * 2 == 3 ==> (1 + (2 * 2)) == 3 */
+/*     Token* tokens[] = { */
+/* 	token_new(TOKEN_NUMBER,  "1", 1, 0, 1), */
+/* 	token_new(TOKEN_PLUS,    "+", 1, 0, 2), */
+/* 	token_new(TOKEN_NUMBER,  "2", 1, 0, 3), */
+/* 	token_new(TOKEN_STAR,    "*", 1, 0, 4), */
+/* 	token_new(TOKEN_NUMBER,  "2", 1, 0, 5), */
+/* 	token_new(TOKEN_EQUAL_EQUAL, "==", 2, 0, 6), */
+/* 	token_new(TOKEN_NUMBER,  "3", 1, 0, 8), */
+/* 	token_new(TOKEN_EOF, NULL, 0, 0, 4) */
+/*     }; */
+/*     size_t tokenCount = 8; */
 
-    // 1 == 3
-    /*Token* tokens[] = {
-	token_new(TOKEN_NUMBER,  "1", 1, 0, 1),
-	token_new(TOKEN_EQUAL_EQUAL, "==", 2, 0, 3),
-	token_new(TOKEN_NUMBER,  "3", 1, 0, 4),
-	token_new(TOKEN_EOF, NULL, 0, 0, 4)
-    };
-    size_t tokenCount = 4;*/
+/*     // 1 == 3 */
+/*     /\*Token* tokens[] = { */
+/* 	token_new(TOKEN_NUMBER,  "1", 1, 0, 1), */
+/* 	token_new(TOKEN_EQUAL_EQUAL, "==", 2, 0, 3), */
+/* 	token_new(TOKEN_NUMBER,  "3", 1, 0, 4), */
+/* 	token_new(TOKEN_EOF, NULL, 0, 0, 4) */
+/*     }; */
+/*     size_t tokenCount = 4;*\/ */
 
     
-    ASTNode *root = astnode_new(SYM_START, NULL);
-    parse(root, tokens, tokenCount);
-    astnode_print(root);
-    printf("\n");
-}
+/*     ASTNode *root = astnode_new(SYM_START, NULL); */
+/*     parse(root, tokens, tokenCount); */
+/*     astnode_print(root); */
+/*     printf("\n"); */
+/* } */
