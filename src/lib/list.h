@@ -38,6 +38,8 @@ for (int i = 0; i < ls->size; i++) {
 */
 void* list_to_arr(List *ls, void *arr);
 
+void* list_get_item(List *ls, size_t i);
+
 void list_free(List *ls);
 
 void printListNode(ListNode* listNode);

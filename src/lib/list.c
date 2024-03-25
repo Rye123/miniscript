@@ -46,6 +46,19 @@ void *list_to_arr(List *ls, void *arr)
     return arr;
 }
 
+void *list_get_item(List *ls, size_t i)
+{
+    ListNode *node = ls->head;
+    size_t cur_i = 0;
+    while (node != NULL) {
+	if (i == cur_i)
+	    return node->data;
+        node = node->next;
+        cur_i += 1;
+    }
+    return NULL;
+}
+
 void list_free(List *ls)
 {
     // Iterate through list
