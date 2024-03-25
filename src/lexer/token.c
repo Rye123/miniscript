@@ -53,8 +53,7 @@ void token_print(Token *token)
 
 void token_string(char* str, const Token *token)
 {
-    printf("Colnum:%d\n", token->colNum);
-    sprintf(str, "Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}\0", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
+    sprintf(str, "Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
 }
 
 void token_free(Token* token)
