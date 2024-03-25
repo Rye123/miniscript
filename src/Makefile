@@ -23,6 +23,7 @@ main: main.o $(OBJS)
 test: tests/lex_test.o $(OBJS)
 	$(CC) $(CFLAGS) tests/lex_test.o $(OBJS) -o tests/lex_test
 	./tests/lex_test
+	$(RM) -f ./tests/lex_test
 
 .PHONY: clean
 clean:
