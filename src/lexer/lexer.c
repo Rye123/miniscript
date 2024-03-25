@@ -1,8 +1,8 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "token.h"
 #include "lexer.h"
-#include "../lib/list.h"
 #define MAX_ERRMSG_LEN 255
 
 void lexError(const char *source, const char *errStr, int lineNum, int colNum)
@@ -156,7 +156,7 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
     }
     return lexEnd;
 }
-void lex(const char *source, List* tokenLs)
+void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
 {
     size_t srcLen = strlen(source);
     int lineNum = 0;
@@ -386,12 +386,20 @@ void lex(const char *source, List* tokenLs)
         if (tokType != TOKEN_UNKNOWN) {
             // INVARIANT: lexeme string is source[lexStart:lexEnd], where lexEnd is the start of the next lexeme.
             size_t lexemeLen = lexEnd - lexStart;
-            Token *tok = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
-            token_print(tok);
-            list_add_item(tokenLs, tok);
+
+	    // Add Token to list
+	    *tokenCount = *tokenCount + 1;
+
+	    *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
+	    (*tokensPtr)[*(tokenCount) - 1] = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
         }
 
         lexStart = lexEnd;
         free(errMsg);
     }
+
+    // Add EOF token
+    *tokenCount = *tokenCount + 1;
+    *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
+    (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum, colNum);
 }

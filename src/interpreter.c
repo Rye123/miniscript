@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include "lib/list.h"
 #include "lexer/token.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
@@ -13,33 +12,29 @@ void runLine(const char* source)
     printf("ENTERED: %s\n", source);
     // Lexical Analysis
     // 1. Initialisation
-    size_t tokenCount = -1;
-    List* tokenLs = list_create(sizeof(Token));
+    size_t tokenCount = 0;
+    Token** tokens = malloc(sizeof(Token *) * 0);
     // 2. Lexing
-    lex(source, tokenLs);
+    lex((const Token***) &tokens, &tokenCount, source);
 
-    // 3. Store array of tokens
-    // Token** tokens = NULL;
-    // tokens = malloc(tokenLs->size * sizeof(Token *));
-    // tokens = list_to_arr(tokenLs, tokens);
-    // tokenCount = tokenLs->size;
-    // list_free(tokenLs);  // Frees the list itself, pointers inside are now in `tokens`
+    printf("--- LEXING RESULT ---\n");
+    printf("Token Count: %lu\n", tokenCount);
+    for (size_t i = 0; i < tokenCount; i++)
+	token_print(tokens[i]);
     
-    // Syntactic Analysis
-    // 1. Initialisation
-    /* TODO: Initialise syntax tree */
-
-    // 2. Parsing
-    // parse(tokens, tokenCount);    /* TODO: Add syntax tree to arguments */
+    // 3. Syntactic Analysis
+    ASTNode *root = astnode_new(SYM_START, NULL);
+    parse(root, tokens, tokenCount);
+    astnode_print(root);
+    printf("\n");
 
     // Execution
 
     // Cleanup
-    // for (size_t i = 0; i < tokenCount; i++) {
-    //     // Free each token
-    //     token_free(tokens[i]);
-    // }
-    // free(tokens);
+    /* astnode_free(root); */
+    for (size_t i = 0; i < tokenCount; i++)
+	token_free(tokens[i]);
+    free(tokens);
 }
 
 void runFile(const char* fname)
