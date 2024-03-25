@@ -9,7 +9,7 @@ ASTNode *astnode_new(SymbolType type, Token *tok)
     node->type = type;
     node->tok = tok;
     node->parent = NULL;
-    node->children = NULL;
+    node->children = malloc(sizeof(ASTNode *) * 0);
     node->numChildren = 0;
     return node;
 }
@@ -23,6 +23,7 @@ void astnode_free(ASTNode *node)
     }
 
     // Free self
+    free(node->children);
     free(node);
 }
 
