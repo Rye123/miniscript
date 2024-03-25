@@ -5,11 +5,24 @@
 #include "../lexer/token.h"
 #include "symbol.h"
 
+void parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseEquality(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseEqualityR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseComparison(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseComparisonR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseSum(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseSumR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseTerm(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseTermR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parsePower(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx, TokenType expectedTokenType);
+
 
 /*
 Parses an array of tokens into a syntax tree.
-TODO: add syntax tree for parsing into the arguments, this should be allocated by the caller.
 */
-void parse(Token** tokens, size_t tokenCount);
+void parse(ASTNode *root, Token** tokens, size_t tokenCount);
 
 #endif

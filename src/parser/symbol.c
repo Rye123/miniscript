@@ -29,7 +29,21 @@ void astnode_free(ASTNode *node)
 
 void astnode_print(ASTNode *node)
 {
-    printf("%s(%s: %s)\n", SymbolTypeString[node->type], TokenTypeString[node->tok->type], node->tok->lexeme);
+  if (node->type == SYM_TERMINAL) {
+      printf("%s(%s('%s'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type], node->tok->lexeme);
+      return;
+  } else
+      printf("%s", SymbolTypeString[node->type]);
+
+  if (node->numChildren > 0) {
+      printf("(");
+      for (size_t i = 0; i < (node->numChildren) - 1; i++) {
+	  astnode_print(node->children[i]);
+	  printf(" ");
+      }
+      astnode_print(node->children[(node->numChildren) - 1]);
+      printf(")");	
+  }
 }
 
 int astnode_isExpanded(ASTNode *node)
@@ -48,6 +62,14 @@ int astnode_isExpanded(ASTNode *node)
 	    return 0;
     }
     return 1;
+}
+
+void astnode_addChildNode(ASTNode *parent, ASTNode *child)
+{
+    parent->numChildren++;
+    parent->children = realloc(parent->children, sizeof(ASTNode *) * parent->numChildren);
+    parent->children[parent->numChildren - 1] = child;
+    child->parent = parent;
 }
 
 void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok)

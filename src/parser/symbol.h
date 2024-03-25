@@ -5,33 +5,44 @@
 
 /**
 Standard
-EXPR       -> EQUALITY
-EQUALITY   -> COMPARISON == EQUALITY | COMPARISON != EQUALITY | COMPARISON
-COMPARISON -> SUM > COMPARISON | SUM >= COMPARISON | SUM < COMPARISON | SUM <= COMPARISON | SUM
-SUM        -> SUM + TERM | SUM - TERM | TERM
-TERM       -> TERM * UNARY | TERM / UNARY | TERM % UNARY | UNARY
-UNARY      -> +UNARY | -UNARY | POWER
-POWER      -> PRIMARY ^ UNARY | PRIMARY
-PRIMARY    -> TERMINAL | ( EXPR )
+     EXPR       -> EQUALITY
+(LR) EQUALITY   -> COMPARISON == EQUALITY | COMPARISON != EQUALITY | COMPARISON
+(LR) COMPARISON -> SUM > COMPARISON | SUM >= COMPARISON | SUM < COMPARISON | SUM <= COMPARISON | SUM
+(LR) SUM        -> SUM + TERM | SUM - TERM | TERM
+(LR) TERM       -> TERM * UNARY | TERM / UNARY | TERM % UNARY | UNARY
+(RR) UNARY      -> +UNARY | -UNARY | POWER
+(RR) POWER      -> PRIMARY ^ UNARY | PRIMARY
+     PRIMARY    -> TERMINAL | ( EXPR )
 
 Left-Recursion Fixed
-EXPR       -> EQUALITY
-EQUALITY   -> COMPARISON == EQUALITY | COMPARISON != EQUALITY | COMPARISON
-COMPARISON -> SUM > COMPARISON | SUM >= COMPARISON | SUM < COMPARISON | SUM <= COMPARISON | SUM
-SUM        -> TERM SUM_R
-SUM_R      -> + SUM SUM_R | empty
-TERM       -> UNARY TERM_R
-TERM_R     -> * TERM TERM_R | / TERM TERM_R | % TERM TERM_R | empty
-UNARY      -> +UNARY | -UNARY | POWER
-POWER      -> PRIMARY ^ UNARY | PRIMARY
-PRIMARY    -> TERMINAL | ( EXPR )
-TERMINAL   -> IDENTIFIER | STRING | NUMBER
+EXPR         -> EQUALITY
+EQUALITY     -> COMPARISON EQUALITY_R
+EQUALITY_R   -> == EQUALITY EQUALITY_R |
+                != EQUALITY EQUALITY_R | 
+                empty
+COMPARISON   -> SUM COMPARISON_R
+COMPARISON_R -> >  COMPARISON COMPARISON_R | 
+                >= COMPARISON COMPARISON_R | 
+                <  COMPARISON COMPARISON_R | 
+                <= COMPARISON COMPARISON_R | 
+                empty
+SUM          -> TERM SUM_R
+SUM_R        -> + SUM SUM_R | - SUM SUM_R | empty
+TERM         -> UNARY TERM_R
+TERM_R       -> * TERM TERM_R | / TERM TERM_R | % TERM TERM_R | empty
+UNARY        -> +UNARY | -UNARY | POWER
+POWER        -> PRIMARY ^ UNARY | PRIMARY
+PRIMARY      -> TERMINAL | ( EXPR )
+TERMINAL     -> IDENTIFIER | STRING | NUMBER
  **/
 
 typedef enum {
+    SYM_START,
     SYM_EXPR,
     SYM_EQUALITY,
+    SYM_EQUALITY_R,
     SYM_COMPARISON,
+    SYM_COMPARISON_R,
     SYM_SUM,
     SYM_SUM_R,
     SYM_TERM,
@@ -43,9 +54,12 @@ typedef enum {
 } SymbolType;
 
 static const char* SymbolTypeString[] = {
-    "SYM_EXPR", "SYM_EQUALITY", "SYM_COMPARISON", "SYM_SUM",
-    "SYM_SUM_R", "SYM_TERM", "SYM_TERM_R", "SYM_UNARY",
-    "SYM_POWER", "SYM_PRIMARY", "SYM_TERMINAL"
+    "SYM_START", "SYM_EXPR",
+    "SYM_EQUALITY", "SYM_EQUALITY_R",
+    "SYM_COMPARISON", "SYM_COMPARISON_R",
+    "SYM_SUM", "SYM_SUM_R",
+    "SYM_TERM", "SYM_TERM_R",
+    "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY", "SYM_TERMINAL"
 };
 
 
@@ -70,6 +84,8 @@ int astnode_isExpanded(ASTNode *node);
 
 // Adds token with type as a child of this node.
 void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok);
+
+void astnode_addChildNode(ASTNode *parent, ASTNode *child);
 
 // Adds a symbol with type `expectedType` as a child of this node.
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType);
