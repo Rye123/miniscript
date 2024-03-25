@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #include "../lexer/token.h"
+#include "symbol.h"
+
 
 /*
 Parses an array of tokens into a syntax tree.
