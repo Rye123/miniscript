@@ -352,6 +352,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
             lexEnd++; colNum++;
           break;
         case '\n':
+	    tokType = TOKEN_NL;
             lineNum++; colNum++;
             lexEnd++;
             break;

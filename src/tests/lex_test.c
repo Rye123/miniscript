@@ -63,7 +63,8 @@ int main()
 	token_new(TOKEN_IDENTIFIER, "a",         1, 0, 1),
 	token_new(TOKEN_EQUAL,      "=",         1, 0, 2), 
 	token_new(TOKEN_NUMBER,     "2.344",     5, 0, 8), 
-	token_new(TOKEN_PLUS,       "+",         1, 0, 9), 
+	token_new(TOKEN_PLUS,       "+",         1, 0, 9),
+	token_new(TOKEN_NL,         "\n",        1, 1, 10),
 	token_new(TOKEN_NUMBER,     "5.77",      4, 1, 14), 
 	token_new(TOKEN_IDENTIFIER, "n",         1, 1, 15), 
 	token_new(TOKEN_STRING,     "\"hello\"", 7, 1, 23), 
@@ -81,9 +82,12 @@ int main()
 	token_new(TOKEN_NUMBER,     "22",    2, 0, 2),
 	token_new(TOKEN_IDENTIFIER, "a",     1, 0, 3), 
 	token_new(TOKEN_STRING,     "\"b\"", 3, 0, 6), 
+	token_new(TOKEN_NL,         "\n",    1, 1, 7),
+	token_new(TOKEN_NL,         "\n",    1, 2, 8),
 	token_new(TOKEN_NUMBER,     "5.5",   3, 2, 12), 
 	token_new(TOKEN_NUMBER,     ".5",    2, 2, 14), 
 	token_new(TOKEN_NUMBER,     ".5",    2, 2, 16), 
+	token_new(TOKEN_NL,         "\n",    1, 3, 17),
 	token_new(TOKEN_EOF,        NULL,    0, 3, 24)
     };
     printf("Test: %s\n", test3);
