@@ -5,6 +5,12 @@
 
 /**
 Standard
+     PROG       -> LINE* EOF
+     LINE       -> ASMT  | STMT
+     ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
+     STMT       -> EXPR_STMT | PRNT_STMT
+     EXPR_STMT  -> EXPR EOL
+     PRNT_STMT  -> TOKEN_PRINT EXPR EOL
      EXPR       -> EQUALITY
 (LR) EQUALITY   -> COMPARISON == EQUALITY | COMPARISON != EQUALITY | COMPARISON
 (LR) COMPARISON -> SUM > COMPARISON | SUM >= COMPARISON | SUM < COMPARISON | SUM <= COMPARISON | SUM
@@ -15,6 +21,12 @@ Standard
      PRIMARY    -> TERMINAL | ( EXPR )
 
 Left-Recursion Fixed
+PROG         -> LINE* EOF
+LINE         -> ASMT | STMT
+ASMT         -> IDENTIFIER = EXPR EOL
+STMT         -> EXPR_STMT | PRNT_STMT
+EXPR_STMT    -> EXPR EOL
+PRNT_STMT    -> TOKEN_PRINT EXPR EOL
 EXPR         -> EQUALITY
 EQUALITY     -> COMPARISON EQUALITY_R
 EQUALITY_R   -> == EQUALITY EQUALITY_R |

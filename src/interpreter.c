@@ -5,6 +5,7 @@
 #include "lexer/token.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include "executor/executor.h"
 #define LINE_MAX 255
 
 void runLine(const char* source)
@@ -29,6 +30,11 @@ void runLine(const char* source)
     printf("\n");
 
     // Execution
+    if (root->numChildren == 1 && root->children[0]->type == SYM_EXPR) {
+	ASTNode *expr = root->children[0];
+	ExecValue *val = execExpr(expr);
+	printf("%f\n", val->literal.literal_num);
+    }
 
     // Cleanup
     /* astnode_free(root); */

@@ -1,5 +1,7 @@
+CC = gcc
 CFLAGS = -g
-OBJS = interpreter.o parser/parser.o parser/symbol.o lexer/lexer.o lexer/token.o
+LFLAGS = -lm
+OBJS = interpreter.o executor/executor.o parser/parser.o parser/symbol.o lexer/lexer.o lexer/token.o
 
 all: main
 
@@ -12,12 +14,16 @@ lexer/%.o: lexer/%.c
 parser/%.o: parser/%.c
 	$(CC) $(CFLAGS) $^ -c -o $@
 
+executor/%.o: executor/%.c
+	$(CC) $(CFLAGS) $^ -c -o $@
+
 tests/%.o: tests/%.c
 	$(CC) $(CFLAGS) $^ -c -o $@
 
 # Linking
+.PHONY: main
 main: main.o $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@
+	$(CC) -o miniscript $(CFLAGS) main.o $(OBJS) $(LFLAGS)
 
 .PHONY: test
 test: tests/lex_test.o $(OBJS)
@@ -27,4 +33,4 @@ test: tests/lex_test.o $(OBJS)
 
 .PHONY: clean
 clean:
-	$(RM) -f *.o lexer/*.o parser/*.o main
+	$(RM) -f *.o executor/*.o lexer/*.o parser/*.o main
