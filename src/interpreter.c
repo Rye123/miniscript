@@ -26,6 +26,7 @@ void runLine(const char* source)
     // 3. Syntactic Analysis
     ASTNode *root = astnode_new(SYM_START, NULL);
     parse(root, tokens, tokenCount);
+    printf("\n--- PARSING RESULT ---\n");
     astnode_print(root);
     printf("\n");
 
@@ -33,6 +34,7 @@ void runLine(const char* source)
     if (root->numChildren == 1 && root->children[0]->type == SYM_EXPR) {
 	ASTNode *expr = root->children[0];
 	ExecValue *val = execExpr(expr);
+	printf("\n--- EXECUTION RESULT ---\n");
 	printf("%f\n", val->literal.literal_num);
     }
 
