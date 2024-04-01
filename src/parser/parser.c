@@ -36,10 +36,10 @@ void parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cur
     // 1. Parse lookahead
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     switch (lookahead->type) {
-    case TOKEN_BRACK_L:
-	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_BRACK_L);
+    case TOKEN_PAREN_L:
+	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_L);
 	parseExpr(self, tokens, tokensLen, curIdx);
-	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_BRACK_R);
+	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_R);
 	break;
     case TOKEN_IDENTIFIER:
     case TOKEN_STRING:

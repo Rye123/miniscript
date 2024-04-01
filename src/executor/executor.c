@@ -21,15 +21,6 @@ ExecValue *value_newNull()
     return val;
 }
 
-ExecValue *value_newBool(int boolValue)
-{
-    ExecValue* val = malloc(sizeof(ExecValue));
-    val->type = TYPE_BOOL;
-    val->literal.literal_bool = (boolValue == 0) ? 0 : 1;
-    val->metadata = -1;
-    return val;
-}
-
 ExecValue *value_newString(char *strValue)
 {
     ExecValue* val = malloc(sizeof(ExecValue));
@@ -71,13 +62,15 @@ ExecValue *execTerminal(ASTNode *terminal)
     case TOKEN_NULL:
 	return value_newNull();
     case TOKEN_TRUE:
-	return value_newBool(1);
+	return value_newNumber(1.0);
     case TOKEN_FALSE:
-	return value_newBool(0);
+	return value_newNumber(0.0);
     case TOKEN_NUMBER:
 	return value_newNumber(tok->literal.literal_num);
     case TOKEN_STRING:
 	return value_newString(tok->literal.literal_str);
+    case TOKEN_IDENTIFIER:
+	return criticalError("Identifier not implemented."); //TODO: this should return a reference to something in the symbol table, where the table is possibly provided through a Context struct.
     default:
 	return criticalError("Invalid token for execTerminal.");
     }
@@ -412,9 +405,9 @@ ExecValue *execComparisonR(ASTNode *comparisonR)
 	    return criticalError("Invalid type of child, expected numbers for both symbols.");
 	}
 	
-	ExecValue *incomparisonVal = value_newBool(value);
-	incomparisonVal->metadata = op;
-	return incomparisonVal;
+	ExecValue *intermediateVal = value_newNumber(value);
+	intermediateVal->metadata = op;
+	return intermediateVal;
     }
 
     return criticalError("Invalid children for comparisonR.");
@@ -457,7 +450,7 @@ ExecValue *execComparison(ASTNode *comparison)
 		value_free(sumVal); value_free(comparisonRVal);
 		return criticalError("Expected operation from child comparisonR.");
 	    }
-	    return value_newBool(value);
+	    return value_newNumber(value);
 	} else {
 	    value_free(sumVal); value_free(comparisonRVal);
 	    return criticalError("Invalid type of child, expected numbers for both symbols.");
@@ -507,32 +500,15 @@ ExecValue *execEqualityR(ASTNode *equalityR)
 		return criticalError("Expected operation from child equalityR.");
 	    }
 	    value_free(equalityVal); value_free(equalityRVal);
-	} else if (equalityRVal->type == TYPE_NULL && equalityVal->type == TYPE_BOOL) {
-	    value = equalityVal->literal.literal_bool;
-	    value_free(equalityVal); value_free(equalityRVal);
-	} else if (equalityRVal->type == TYPE_BOOL && equalityVal->type == TYPE_BOOL) {
-	    // Apply the operation based on equalityRVal's metadata
-	    value = equalityVal->literal.literal_num;
-	    double rvalue = equalityRVal->literal.literal_num;
-	    int child_op = equalityRVal->metadata;
-	    if (child_op == 0)
-		value = value == rvalue; //TODO: handle errors
-	    else if (child_op == 1)
-		value = value != rvalue; //TODO: handle errors
-	    else {
-		value_free(equalityVal); value_free(equalityRVal);
-		return criticalError("Expected operation from child equalityR.");
-	    }
-	    value_free(equalityVal); value_free(equalityRVal);
 	} else {
 	    value_free(equalityVal);
 	    value_free(equalityRVal);
-	    return criticalError("Invalid type of child, expected numbers or bools for both symbols.");
+	    return criticalError("Invalid type of child, expected numbers for both symbols.");
 	}
 	
-	ExecValue *inequalityVal = value_newBool(value);
-	inequalityVal->metadata = op;
-	return inequalityVal;
+	ExecValue *intermediateVal = value_newNumber(value);
+	intermediateVal->metadata = op;
+	return intermediateVal;
     }
 
     return criticalError("Invalid children for equalityR.");
@@ -572,29 +548,12 @@ ExecValue *execEquality(ASTNode *equality)
 		return criticalError("Expected operation from child equalityR.");
 	    }
 	    value_free(comparisonVal); value_free(equalityRVal);
-	} else if (equalityRVal->type == TYPE_NULL && comparisonVal->type == TYPE_BOOL) {
-	    value = comparisonVal->literal.literal_bool;
-	    value_free(comparisonVal); value_free(equalityRVal);
-	} else if (equalityRVal->type == TYPE_BOOL && comparisonVal->type == TYPE_BOOL) {
-	    // Apply the operation based on equalityRVal's metadata
-	    value = comparisonVal->literal.literal_num;
-	    double rvalue = equalityRVal->literal.literal_num;
-	    int child_op = equalityRVal->metadata;
-	    if (child_op == 0)
-		value = value == rvalue; //TODO: handle errors
-	    else if (child_op == 1)
-		value = value != rvalue; //TODO: handle errors
-	    else {
-		value_free(comparisonVal); value_free(equalityRVal);
-		return criticalError("Expected operation from child equalityR.");
-	    }
-	    value_free(comparisonVal); value_free(equalityRVal);
 	} else {
 	    value_free(comparisonVal); value_free(equalityRVal);
-	    return criticalError("Invalid type of child, expected numbers or bools for both symbols.");
+	    return criticalError("Invalid type of child, expected numbers for both symbols.");
 	}
 
-        return value_newBool(value);
+        return value_newNumber(value);
     }
 
     return criticalError("Invalid children for equality.");

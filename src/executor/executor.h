@@ -6,7 +6,6 @@
 typedef enum {
     TYPE_NUMBER,
     TYPE_STRING,
-    TYPE_BOOL,
     TYPE_NULL
 } ExecValueType;
 
@@ -14,7 +13,6 @@ typedef struct {
     ExecValueType type;
     union {
 	void* literal_null;
-	int literal_bool;
 	double literal_num;
 	char* literal_str;
     } literal;
@@ -22,7 +20,6 @@ typedef struct {
 } ExecValue;
 
 ExecValue* value_newNull();
-ExecValue* value_newBool(int boolValue);
 ExecValue* value_newString(char* strValue);
 ExecValue* value_newNumber(double numValue);
 void value_free(ExecValue *value);
