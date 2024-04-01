@@ -72,7 +72,7 @@ ExecValue *execTerminal(ASTNode *terminal)
     case TOKEN_IDENTIFIER:
 	return criticalError("Identifier not implemented."); //TODO: this should return a reference to something in the symbol table, where the table is possibly provided through a Context struct.
     default:
-	return criticalError("Invalid token for execTerminal.");
+	return criticalError("Invalid token for execTerminal");
     }
 }
 
@@ -84,12 +84,16 @@ ExecValue *execPrimary(ASTNode *primary)
 	return criticalError("Given empty primary.");
 
     // Check if primary is ( EXPR ) or TERMINAL
-    if (primary->children[0]->type == SYM_TERMINAL)
+    if (primary->numChildren == 3) {
+	if (primary->children[0]->tok->type != TOKEN_PAREN_L ||
+	    primary->children[2]->tok->type != TOKEN_PAREN_R)
+	    return criticalError("Expected ( EXPR ), instead given invalid expression with 3 children.");
+	return execExpr(primary->children[1]);
+    } else if (primary->numChildren == 1) {
 	return execTerminal(primary->children[0]);
-    if (primary->numChildren != 3)
-	return criticalError("Invalid number of children for primary.");
-   
-    return execExpr(primary->children[1]);
+    }
+    
+    return criticalError("Invalid number of children for primary.");
 }
 
 ExecValue *execPower(ASTNode *power)
