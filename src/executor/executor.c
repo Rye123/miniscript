@@ -138,7 +138,7 @@ ExecValue *execUnary(ASTNode *unary)
 	int is_pos = 0;
 	if (unary->children[0]->tok->type == TOKEN_PLUS)
 	    is_pos = 1;
-	else if (unary->children[1]->tok->type == TOKEN_MINUS)
+	else if (unary->children[0]->tok->type == TOKEN_MINUS)
 	    is_pos = 0;
 	else
 	    return criticalError("Invalid first child of unary.");
