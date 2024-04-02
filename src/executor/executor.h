@@ -26,9 +26,14 @@ void value_free(ExecValue *value);
 
 /**
 execSymbol:
-- Returns NULL, or the evaluated Token*.
+- Returns NULL, or the evaluated ExecValue*.
  */
 
+ExecValue* execStart(ASTNode *start);
+ExecValue* execLine(ASTNode *line);
+ExecValue* execStmt(ASTNode *stmt);
+ExecValue* execExprStmt(ASTNode *exprStmt);
+ExecValue* execPrntStmt(ASTNode *prntStmt);
 ExecValue* execExpr(ASTNode* expr);
 ExecValue* execEquality(ASTNode *equality);
 ExecValue* execEqualityR(ASTNode *equalityR);

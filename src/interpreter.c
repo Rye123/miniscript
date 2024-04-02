@@ -31,12 +31,10 @@ void runLine(const char* source)
     printf("\n");
 
     // Execution
-    if (root->numChildren == 1 && root->children[0]->type == SYM_EXPR) {
-	ASTNode *expr = root->children[0];
-	ExecValue *val = execExpr(expr);
-	printf("\n--- EXECUTION RESULT ---\n");
-	printf("%f\n", val->literal.literal_num);
-    }
+    printf("\n--- EXECUTION RESULT ---\n");
+    ExecValue *val = execStart(root);
+    printf("\nExit Code: %f\n", val->literal.literal_num);
+    value_free(val);
 
     // Cleanup
     /* astnode_free(root); */

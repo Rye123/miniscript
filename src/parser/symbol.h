@@ -5,7 +5,7 @@
 
 /**
 Standard
-     PROG       -> LINE* EOF
+     START      -> LINE* EOF
      LINE       -> ASMT  | STMT
      ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
      STMT       -> EXPR_STMT | PRNT_STMT
@@ -21,7 +21,7 @@ Standard
      PRIMARY    -> TERMINAL | ( EXPR )
 
 Left-Recursion Fixed
-PROG         -> LINE* EOF
+START        -> LINE* EOF
 LINE         -> ASMT | STMT
 ASMT         -> IDENTIFIER = EXPR EOL
 STMT         -> EXPR_STMT | PRNT_STMT
@@ -50,23 +50,23 @@ TERMINAL     -> IDENTIFIER | STRING | NUMBER
 
 typedef enum {
     SYM_START,
+    SYM_LINE,
+    SYM_ASMT, SYM_STMT,
+    SYM_EXPR_STMT, SYM_PRNT_STMT,    
     SYM_EXPR,
-    SYM_EQUALITY,
-    SYM_EQUALITY_R,
-    SYM_COMPARISON,
-    SYM_COMPARISON_R,
-    SYM_SUM,
-    SYM_SUM_R,
-    SYM_TERM,
-    SYM_TERM_R,
-    SYM_UNARY,
-    SYM_POWER,
-    SYM_PRIMARY,
-    SYM_TERMINAL,
+    SYM_EQUALITY, SYM_EQUALITY_R,
+    SYM_COMPARISON, SYM_COMPARISON_R,
+    SYM_SUM, SYM_SUM_R,
+    SYM_TERM, SYM_TERM_R,
+    SYM_UNARY, SYM_POWER, SYM_PRIMARY, SYM_TERMINAL,
 } SymbolType;
 
 static const char* SymbolTypeString[] = {
-    "SYM_START", "SYM_EXPR",
+    "SYM_START",
+    "SYM_LINE",
+    "SYM_ASMT", "SYM_STMT",
+    "SYM_EXPR_STMT", "SYM_PRNT_STMT",
+    "SYM_EXPR",
     "SYM_EQUALITY", "SYM_EQUALITY_R",
     "SYM_COMPARISON", "SYM_COMPARISON_R",
     "SYM_SUM", "SYM_SUM_R",
@@ -91,9 +91,6 @@ ASTNode *astnode_new(SymbolType type, Token *tok);
 void astnode_free(ASTNode *node);
 void astnode_print(ASTNode *node);
 
-// Returns if this node is expanded (i.e. is either a terminal, or a nonterminal with expanded children)
-int astnode_isExpanded(ASTNode *node);
-
 // Adds token with type as a child of this node.
 void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok);
 
@@ -101,8 +98,5 @@ void astnode_addChildNode(ASTNode *parent, ASTNode *child);
 
 // Adds a symbol with type `expectedType` as a child of this node.
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType);
-
-// Evaluates all non-expanded children of this node (i.e. children who are nonterminals and aren't expanded)
-void astnode_eval(ASTNode *node);
 
 #endif

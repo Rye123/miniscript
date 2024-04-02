@@ -221,6 +221,77 @@ void parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
     astnode_addChildNode(parent, self);
 }
 
+void parsePrntStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parsePrntStmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_PRNT_STMT, NULL);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PRINT);
+    parseExpr(self, tokens, tokensLen, curIdx);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL); //TODO: ENSURE a program ENDS with NL and then EOF.
+
+    astnode_addChildNode(parent, self);
+}
+
+void parseExprStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseExprStmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_EXPR_STMT, NULL);
+    parseExpr(self, tokens, tokensLen, curIdx);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL); //TODO: ENSURE a program ENDS with NL and then EOF.
+
+    astnode_addChildNode(parent, self);
+}
+
+void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseStmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_STMT, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type == TOKEN_PRINT) {
+	parsePrntStmt(self, tokens, tokensLen, curIdx);
+    } else {
+	parseExprStmt(self, tokens, tokensLen, curIdx);
+    }
+
+    astnode_addChildNode(parent, self);
+}
+
+void parseAsmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseAsmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_ASMT, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
+    if (lookahead->type != TOKEN_IDENTIFIER || lookahead2->type != TOKEN_EQUAL) {
+	printf("Invalid assignment parsing.\n");
+	exit(1);
+    }
+    
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IDENTIFIER);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_EQUAL);
+    parseExpr(self, tokens, tokensLen, curIdx);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+
+    astnode_addChildNode(parent, self);
+}
+
+void parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseLine", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_LINE, NULL);
+
+    // If lookahead is an IDENTIFIER, we check if the follow-up is an equal sign. If so, then it is an assignment.
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
+    if (lookahead->type == TOKEN_IDENTIFIER && lookahead2->type == TOKEN_EQUAL)
+	parseAsmt(self, tokens, tokensLen, curIdx);
+    else
+	parseStmt(self, tokens, tokensLen, curIdx);
+    
+    astnode_addChildNode(parent, self);
+}
+
+
 void parse(ASTNode *root, Token **tokens, size_t tokenCount)
 {
     // Identify length of tokens array
@@ -233,7 +304,7 @@ void parse(ASTNode *root, Token **tokens, size_t tokenCount)
 	lookahead = getToken(tokens, tokensLen, curIdx);
 	if (lookahead->type == TOKEN_EOF)
 	    break;
-	parseExpr(root, tokens, tokensLen, &curIdx);
+	parseLine(root, tokens, tokensLen, &curIdx);
 	curIdx++;
     }
     return;

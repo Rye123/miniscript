@@ -573,3 +573,98 @@ ExecValue *execExpr(ASTNode *expr)
 
     return execEquality(expr->children[0]);
 }
+
+ExecValue *execPrntStmt(ASTNode *prntStmt)
+{
+    if (prntStmt->numChildren == 3 &&
+	prntStmt->children[0]->tok->type == TOKEN_PRINT &&
+	prntStmt->children[1]->type == SYM_EXPR &&
+	prntStmt->children[2]->tok->type == TOKEN_NL) {
+	ExecValue *exprResult = execExpr(prntStmt->children[1]);
+
+	switch (exprResult->type) {
+	case TYPE_STRING:
+	    printf("%s", exprResult->literal.literal_str);
+	    break;
+	case TYPE_NUMBER:
+	    printf("%f", exprResult->literal.literal_num);
+	    break;
+	case TYPE_NULL:
+	    printf("(null)");
+	    break;
+	}
+	value_free(exprResult);
+	return value_newNull();
+    }
+    return criticalError("Invalid print statement.");
+}
+
+ExecValue *execExprStmt(ASTNode *exprStmt)
+{
+    if (exprStmt->numChildren == 2 &&
+	exprStmt->children[0]->type == SYM_EXPR &&
+	exprStmt->children[1]->tok->type == TOKEN_NL) {
+	ExecValue *exprResult = execExpr(exprStmt->children[0]);
+	value_free(exprResult);
+	return value_newNull();
+    }
+    return criticalError("Invalid expr statement.");
+}
+
+ExecValue *execStmt(ASTNode *stmt)
+{
+    if (stmt->numChildren == 1) {
+	if (stmt->children[0]->type == SYM_EXPR_STMT)
+	    return execExprStmt(stmt->children[0]);
+	if (stmt->children[0]->type == SYM_PRNT_STMT)
+	    return execPrntStmt(stmt->children[0]);
+    }
+    return criticalError("Invalid statement.");
+}
+
+ExecValue *execAsmt(ASTNode *asmt)
+{
+    if (asmt->numChildren == 4 &&
+	asmt->children[0]->tok->type == TOKEN_IDENTIFIER &&
+	asmt->children[1]->tok->type == TOKEN_EQUAL &&
+	asmt->children[2]->type == SYM_EXPR &&
+	asmt->children[3]->tok->type == TOKEN_NL) {
+	ExecValue *rvalue = execExpr(asmt->children[2]);
+	// TODO: implement symbol table assignment
+	value_free(rvalue);
+	return value_newNull();
+    }
+    return criticalError("Invalid assignment.");
+}
+
+ExecValue *execLine(ASTNode *line)
+{
+    if (line->numChildren == 1) {
+	if (line->children[0]->type == SYM_ASMT)
+	    return execAsmt(line->children[0]);
+	if (line->children[0]->type == SYM_STMT)
+	    return execStmt(line->children[0]);
+    }
+    return criticalError("Invalid line.");
+}
+
+ExecValue *execStart(ASTNode *start)
+{
+    // Returns the execution exit code
+    //TODO: all runtime errors here
+    int exitCode = 0;
+    for (size_t i = 0; i < start->numChildren; i++) {
+	ASTNode *child = start->children[0];
+	ExecValue *result;
+	if (child->type == SYM_LINE)
+	    result = execLine(child);
+	else if (child->tok->type == TOKEN_EOF)
+	    break;
+	else
+	    return criticalError("Unexpected symbol.");
+
+	value_free(result);
+    }
+
+    return value_newNumber(exitCode);
+}
