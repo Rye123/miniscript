@@ -1,3 +1,9 @@
 1 + 2 * 3 - 7 + 5 * 4
 EXPECTED:  20
 RESULT:   -20
+
+3 - 7 + 5
+EXPECTED:  1
+RESULT:   -9
+
+This bug is because of execution -- need to figure out how to handle sum, sum_r computation (and the other versions)
