@@ -4,6 +4,7 @@
 #include "../lexer/token.h"
 #include "../parser/symbol.h"
 #include "executor.h"
+#include "symboltable.h"
 
 ExecValue *criticalError(char *msg)
 {
@@ -16,7 +17,7 @@ ExecValue *value_newNull()
 {
     ExecValue* val = malloc(sizeof(ExecValue));
     val->type = TYPE_NULL;
-    val->literal.literal_null = NULL;
+    val->value.literal_null = NULL;
     val->metadata = -1;
     return val;
 }
@@ -30,7 +31,7 @@ ExecValue *value_newString(char *strValue)
     char *str_cpy = malloc(strlen(strValue) * sizeof(char));
     if (strValue != NULL)
 	memcpy(str_cpy, strValue, strlen(strValue));
-    val->literal.literal_str = str_cpy;
+    val->value.literal_str = str_cpy;
     val->metadata = -1;
     return val;
 }
@@ -39,19 +40,33 @@ ExecValue *value_newNumber(double numValue)
 {
     ExecValue* val = malloc(sizeof(ExecValue));
     val->type = TYPE_NUMBER;
-    val->literal.literal_num = numValue;
+    val->value.literal_num = numValue;
     val->metadata = -1;
     return val;
+}
+
+ExecValue *value_newIdentifier(char *identifierName)
+{
+    ExecValue* val = malloc(sizeof(ExecValue));
+    val->type = TYPE_IDENTIFIER;
+
+    // Create null-terminated copy of the identifier name
+    char *name_cpy = malloc(strlen(identifierName) * sizeof(char));
+    if (identifierName != NULL)
+	memcpy(name_cpy, identifierName, strlen(identifierName));
+    val->value.identifier_name = name_cpy;
 }
 
 void value_free(ExecValue *value)
 {
     if (value->type == TYPE_STRING)
-	free(value->literal.literal_str);
+	free(value->value.literal_str);
+    if (value->type == TYPE_IDENTIFIER)
+	free(value->value.identifier_name);
     free(value);
 }
 
-ExecValue *execTerminal(ASTNode *terminal)
+ExecValue *execTerminal(Context* ctx, ASTNode *terminal)
 {
     if (terminal->type != SYM_TERMINAL)
 	return criticalError("Given invalid value for execTerminal.");
@@ -70,13 +85,13 @@ ExecValue *execTerminal(ASTNode *terminal)
     case TOKEN_STRING:
 	return value_newString(tok->literal.literal_str);
     case TOKEN_IDENTIFIER:
-	return criticalError("Identifier not implemented."); //TODO: this should return a reference to something in the symbol table, where the table is possibly provided through a Context struct.
+	return value_newIdentifier(tok->lexeme);
     default:
 	return criticalError("Invalid token for execTerminal");
     }
 }
 
-ExecValue *execPrimary(ASTNode *primary)
+ExecValue *execPrimary(Context* ctx, ASTNode *primary)
 {
     if (primary->type != SYM_PRIMARY)
 	return criticalError("Given invalid value for execPrimary.");
@@ -88,27 +103,27 @@ ExecValue *execPrimary(ASTNode *primary)
 	if (primary->children[0]->tok->type != TOKEN_PAREN_L ||
 	    primary->children[2]->tok->type != TOKEN_PAREN_R)
 	    return criticalError("Expected ( EXPR ), instead given invalid expression with 3 children.");
-	return execExpr(primary->children[1]);
+	return execExpr(ctx, primary->children[1]);
     } else if (primary->numChildren == 1) {
-	return execTerminal(primary->children[0]);
+	return execTerminal(ctx, primary->children[0]);
     }
     
     return criticalError("Invalid number of children for primary.");
 }
 
-ExecValue *execPower(ASTNode *power)
+ExecValue *execPower(Context* ctx, ASTNode *power)
 {
     if (power->type != SYM_POWER)
 	return criticalError("Given invalid value for execPower.");
     
     // Check if power is PRIMARY ^ UNARY or PRIMARY
     if (power->numChildren == 1)
-	return execPrimary(power->children[0]);
+	return execPrimary(ctx, power->children[0]);
     if (power->numChildren == 3) {
 	if (power->children[1]->tok->type != TOKEN_CARET)
 	    criticalError("Invalid middle token for execPower.");
-	ExecValue *lVal = execPrimary(power->children[0]);
-	ExecValue *rVal = execUnary(power->children[2]);
+	ExecValue *lVal = execPrimary(ctx, power->children[0]);
+	ExecValue *rVal = execUnary(ctx, power->children[2]);
 
 	if (lVal->type != TYPE_NUMBER || rVal->type != TYPE_NUMBER) {
 	    printf("Semantic Error: Operation ^ is valid only between numbers.\n");
@@ -116,8 +131,8 @@ ExecValue *execPower(ASTNode *power)
 	    return value_newNull();
 	}
 	
-	double lvalue = lVal->literal.literal_num;
-	double rvalue = rVal->literal.literal_num;
+	double lvalue = lVal->value.literal_num;
+	double rvalue = rVal->value.literal_num;
 	double value = pow(lvalue, rvalue); //TODO: pow() errors
 	value_free(lVal); value_free(rVal);
 	return value_newNumber(value);
@@ -126,14 +141,14 @@ ExecValue *execPower(ASTNode *power)
     return criticalError("Invalid children for power.");
 }
 
-ExecValue *execUnary(ASTNode *unary)
+ExecValue *execUnary(Context* ctx, ASTNode *unary)
 {
     if (unary->type != SYM_UNARY)
 	return criticalError("Given invalid value for execUnary.");
     
     // Check if unary is +/- UNARY or POWER
     if (unary->numChildren == 1)
-	return execPower(unary->children[0]);
+	return execPower(ctx, unary->children[0]);
     if (unary->numChildren == 2) {
 	int is_pos = 0;
 	if (unary->children[0]->tok->type == TOKEN_PLUS)
@@ -142,13 +157,13 @@ ExecValue *execUnary(ASTNode *unary)
 	    is_pos = 0;
 	else
 	    return criticalError("Invalid first child of unary.");
-	ExecValue *rVal = execUnary(unary->children[1]);
+	ExecValue *rVal = execUnary(ctx, unary->children[1]);
 	if (rVal->type != TYPE_NUMBER) {
 	    printf("Semantic Error: Only a number can be unary.\n");
 	    value_free(rVal);
 	    return value_newNull();
 	}
-	double value = rVal->literal.literal_num;
+	double value = rVal->value.literal_num;
 	if (!is_pos)
 	    value = -value;
 	value_free(rVal);
@@ -158,7 +173,7 @@ ExecValue *execUnary(ASTNode *unary)
     return criticalError("Invalid children for unary.");
 }
 
-ExecValue *execTermR(ASTNode *termR)
+ExecValue *execTermR(Context* ctx, ASTNode *termR)
 {
     if (termR->type != SYM_TERM_R)
 	return criticalError("Given invalid value for execTermR.");
@@ -178,17 +193,17 @@ ExecValue *execTermR(ASTNode *termR)
 	if (termR->children[1]->type != SYM_TERM || termR->children[2]->type != SYM_TERM_R)
 	    return criticalError("Invalid child type for termR.");
 
-	ExecValue *termVal = execTerm(termR->children[1]);
-	ExecValue *termRVal = execTermR(termR->children[2]);
+	ExecValue *termVal = execTerm(ctx, termR->children[1]);
+	ExecValue *termRVal = execTermR(ctx, termR->children[2]);
 	double value;
 	
 	if (termRVal->type == TYPE_NULL && termVal->type == TYPE_NUMBER) {
-	    value = termVal->literal.literal_num;
+	    value = termVal->value.literal_num;
 	    value_free(termVal); value_free(termRVal);
 	} else if (termRVal->type == TYPE_NUMBER && termVal->type == TYPE_NUMBER) {
 	    // Apply the operation based on termRVal's metadata
-	    value = termVal->literal.literal_num;
-	    double rvalue = termRVal->literal.literal_num;
+	    value = termVal->value.literal_num;
+	    double rvalue = termRVal->value.literal_num;
 	    int child_op = termRVal->metadata;
 	    if (child_op == 0)
 		value = value * rvalue; //TODO: handle errors
@@ -215,7 +230,7 @@ ExecValue *execTermR(ASTNode *termR)
     return criticalError("Invalid children for termR.");
 }
 
-ExecValue *execTerm(ASTNode *term)
+ExecValue *execTerm(Context* ctx, ASTNode *term)
 {
     if (term->type != SYM_TERM)
 	return criticalError("Given invalid value for execTermR.");
@@ -227,17 +242,19 @@ ExecValue *execTerm(ASTNode *term)
 	if (term->children[0]->type != SYM_UNARY || term->children[1]->type != SYM_TERM_R)
 	    return criticalError("Invalid child type for TERM.");
 
-	ExecValue *unaryVal = execUnary(term->children[0]);
-	ExecValue *termRVal = execTermR(term->children[1]);
+	ExecValue *unaryVal = execUnary(ctx, term->children[0]);
+	ExecValue *termRVal = execTermR(ctx, term->children[1]);
 	double value;
 
-	if (unaryVal->type == TYPE_NUMBER && termRVal->type == TYPE_NULL) {
-	    value = unaryVal->literal.literal_num;
+	if (unaryVal->type == TYPE_STRING && termRVal->type == TYPE_NULL) {
+	    value_free(termRVal); return unaryVal;
+	} else if (unaryVal->type == TYPE_NUMBER && termRVal->type == TYPE_NULL) {
+	    value = unaryVal->value.literal_num;
 	    value_free(unaryVal); value_free(termRVal);
 	} else if (unaryVal->type == TYPE_NUMBER && termRVal->type == TYPE_NUMBER) {
 	    // Apply operation, based on termRVal's metadata
-	    value = unaryVal->literal.literal_num;
-	    double rvalue = termRVal->literal.literal_num;
+	    value = unaryVal->value.literal_num;
+	    double rvalue = termRVal->value.literal_num;
 	    int child_op = termRVal->metadata;
 	    if (child_op == 0)
 		value = value * rvalue; //TODO: handle errors
@@ -260,7 +277,7 @@ ExecValue *execTerm(ASTNode *term)
     return criticalError("Invalid children for term.");
 }
 
-ExecValue *execSumR(ASTNode *sumR)
+ExecValue *execSumR(Context* ctx, ASTNode *sumR)
 {
     if (sumR->type != SYM_SUM_R)
 	return criticalError("Given invalid value for execSumR.");
@@ -279,17 +296,17 @@ ExecValue *execSumR(ASTNode *sumR)
 	if (sumR->children[1]->type != SYM_SUM || sumR->children[2]->type != SYM_SUM_R)
 	    return criticalError("Invalid child type for sumR.");
 
-	ExecValue *sumVal = execSum(sumR->children[1]);
-	ExecValue *sumRVal = execSumR(sumR->children[2]);
+	ExecValue *sumVal = execSum(ctx, sumR->children[1]);
+	ExecValue *sumRVal = execSumR(ctx, sumR->children[2]);
 	double value;
 	
 	if (sumRVal->type == TYPE_NULL && sumVal->type == TYPE_NUMBER) {
-	    value = sumVal->literal.literal_num;
+	    value = sumVal->value.literal_num;
 	    value_free(sumVal); value_free(sumRVal);
 	} else if (sumRVal->type == TYPE_NUMBER && sumVal->type == TYPE_NUMBER) {
 	    // Apply the operation based on sumRVal's metadata
-	    value = sumVal->literal.literal_num;
-	    double rvalue = sumRVal->literal.literal_num;
+	    value = sumVal->value.literal_num;
+	    double rvalue = sumRVal->value.literal_num;
 	    int child_op = sumRVal->metadata;
 	    if (child_op == 0)
 		value = value + rvalue; //TODO: handle errors
@@ -314,7 +331,7 @@ ExecValue *execSumR(ASTNode *sumR)
     return criticalError("Invalid children for sumR.");
 }
 
-ExecValue *execSum(ASTNode *sum)
+ExecValue *execSum(Context* ctx, ASTNode *sum)
 {
     if (sum->type != SYM_SUM)
 	return criticalError("Given invalid value for execSumR.");
@@ -326,17 +343,17 @@ ExecValue *execSum(ASTNode *sum)
 	if (sum->children[0]->type != SYM_TERM || sum->children[1]->type != SYM_SUM_R)
 	    return criticalError("Invalid child type for SUM.");
 
-	ExecValue *termVal = execTerm(sum->children[0]);
-	ExecValue *sumRVal = execSumR(sum->children[1]);
+	ExecValue *termVal = execTerm(ctx, sum->children[0]);
+	ExecValue *sumRVal = execSumR(ctx, sum->children[1]);
 	double value;
 
 	if (termVal->type == TYPE_NUMBER && sumRVal->type == TYPE_NULL) {
-	    value = termVal->literal.literal_num;
+	    value = termVal->value.literal_num;
 	    value_free(termVal); value_free(sumRVal);
 	} else if (termVal->type == TYPE_NUMBER && sumRVal->type == TYPE_NUMBER) {
 	    // Apply operation, based on sumRVal's metadata
-	    value = termVal->literal.literal_num;
-	    double rvalue = sumRVal->literal.literal_num;
+	    value = termVal->value.literal_num;
+	    double rvalue = sumRVal->value.literal_num;
 	    int child_op = sumRVal->metadata;
 	    if (child_op == 0)
 		value = value + rvalue; //TODO: handle errors
@@ -357,7 +374,7 @@ ExecValue *execSum(ASTNode *sum)
     return criticalError("Invalid children for sum.");
 }
 
-ExecValue *execComparisonR(ASTNode *comparisonR)
+ExecValue *execComparisonR(Context* ctx, ASTNode *comparisonR)
 {
     if (comparisonR->type != SYM_COMPARISON_R)
 	return criticalError("Given invalid value for execComparisonR.");
@@ -378,17 +395,17 @@ ExecValue *execComparisonR(ASTNode *comparisonR)
 	if (comparisonR->children[1]->type != SYM_COMPARISON || comparisonR->children[2]->type != SYM_COMPARISON_R)
 	    return criticalError("Invalid child type for comparisonR.");
 
-	ExecValue *comparisonVal = execComparison(comparisonR->children[1]);
-	ExecValue *comparisonRVal = execComparisonR(comparisonR->children[2]);
+	ExecValue *comparisonVal = execComparison(ctx, comparisonR->children[1]);
+	ExecValue *comparisonRVal = execComparisonR(ctx, comparisonR->children[2]);
 	double value;
 	
 	if (comparisonRVal->type == TYPE_NULL && comparisonVal->type == TYPE_NUMBER) {
-	    value = comparisonVal->literal.literal_num;
+	    value = comparisonVal->value.literal_num;
 	    value_free(comparisonVal); value_free(comparisonRVal);
 	} else if (comparisonRVal->type == TYPE_NUMBER && comparisonVal->type == TYPE_NUMBER) {
 	    // Apply the operation based on comparisonRVal's metadata
-	    value = comparisonVal->literal.literal_num;
-	    double rvalue = comparisonRVal->literal.literal_num;
+	    value = comparisonVal->value.literal_num;
+	    double rvalue = comparisonRVal->value.literal_num;
 	    int child_op = comparisonRVal->metadata;
 	    if (child_op == 0)
 		value = value > rvalue; //TODO: handle errors
@@ -417,7 +434,7 @@ ExecValue *execComparisonR(ASTNode *comparisonR)
     return criticalError("Invalid children for comparisonR.");
 }
 
-ExecValue *execComparison(ASTNode *comparison)
+ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 {
     if (comparison->type != SYM_COMPARISON)
 	return criticalError("Given invalid value for execComparisonR.");
@@ -429,18 +446,18 @@ ExecValue *execComparison(ASTNode *comparison)
 	if (comparison->children[0]->type != SYM_SUM || comparison->children[1]->type != SYM_COMPARISON_R)
 	    return criticalError("Invalid child type for COMPARISON.");
 
-	ExecValue *sumVal = execSum(comparison->children[0]);
-	ExecValue *comparisonRVal = execComparisonR(comparison->children[1]);
+	ExecValue *sumVal = execSum(ctx, comparison->children[0]);
+	ExecValue *comparisonRVal = execComparisonR(ctx, comparison->children[1]);
 	double value;
 
 	if (sumVal->type == TYPE_NUMBER && comparisonRVal->type == TYPE_NULL) {
-	    value = sumVal->literal.literal_num;
+	    value = sumVal->value.literal_num;
 	    value_free(sumVal); value_free(comparisonRVal);
 	    return value_newNumber(value);
 	} else if (sumVal->type == TYPE_NUMBER && comparisonRVal->type == TYPE_NUMBER) {
 	    // Apply operation, based on comparisonRVal's metadata
-	    value = sumVal->literal.literal_num;
-	    double rvalue = comparisonRVal->literal.literal_num;
+	    value = sumVal->value.literal_num;
+	    double rvalue = comparisonRVal->value.literal_num;
 	    int child_op = comparisonRVal->metadata;
 	    if (child_op == 0)
 		value = value > rvalue; //TODO: handle errors
@@ -464,7 +481,7 @@ ExecValue *execComparison(ASTNode *comparison)
     return criticalError("Invalid children for comparison.");
 }
 
-ExecValue *execEqualityR(ASTNode *equalityR)
+ExecValue *execEqualityR(Context* ctx, ASTNode *equalityR)
 {
     if (equalityR->type != SYM_EQUALITY_R)
 	return criticalError("Given invalid value for execEqualityR.");
@@ -483,17 +500,17 @@ ExecValue *execEqualityR(ASTNode *equalityR)
 	if (equalityR->children[1]->type != SYM_EQUALITY || equalityR->children[2]->type != SYM_EQUALITY_R)
 	    return criticalError("Invalid child type for equalityR.");
 
-	ExecValue *equalityVal = execEquality(equalityR->children[1]);
-	ExecValue *equalityRVal = execEqualityR(equalityR->children[2]);
+	ExecValue *equalityVal = execEquality(ctx, equalityR->children[1]);
+	ExecValue *equalityRVal = execEqualityR(ctx, equalityR->children[2]);
 	double value;
 	
 	if (equalityRVal->type == TYPE_NULL && equalityVal->type == TYPE_NUMBER) {
-	    value = equalityVal->literal.literal_num;
+	    value = equalityVal->value.literal_num;
 	    value_free(equalityVal); value_free(equalityRVal);
 	} else if (equalityRVal->type == TYPE_NUMBER && equalityVal->type == TYPE_NUMBER) {
 	    // Apply the operation based on equalityRVal's metadata
-	    value = equalityVal->literal.literal_num;
-	    double rvalue = equalityRVal->literal.literal_num;
+	    value = equalityVal->value.literal_num;
+	    double rvalue = equalityRVal->value.literal_num;
 	    int child_op = equalityRVal->metadata;
 	    if (child_op == 0)
 		value = value == rvalue; //TODO: handle errors
@@ -518,7 +535,7 @@ ExecValue *execEqualityR(ASTNode *equalityR)
     return criticalError("Invalid children for equalityR.");
 }
 
-ExecValue *execEquality(ASTNode *equality)
+ExecValue *execEquality(Context* ctx, ASTNode *equality)
 {
     if (equality->type != SYM_EQUALITY)
 	return criticalError("Given invalid value for execEqualityR.");
@@ -530,18 +547,18 @@ ExecValue *execEquality(ASTNode *equality)
 	if (equality->children[0]->type != SYM_COMPARISON || equality->children[1]->type != SYM_EQUALITY_R)
 	    return criticalError("Invalid child type for EQUALITY.");
 
-	ExecValue *comparisonVal = execComparison(equality->children[0]);
-	ExecValue *equalityRVal = execEqualityR(equality->children[1]);
+	ExecValue *comparisonVal = execComparison(ctx, equality->children[0]);
+	ExecValue *equalityRVal = execEqualityR(ctx, equality->children[1]);
 	double value;
 	
 	if (equalityRVal->type == TYPE_NULL && comparisonVal->type == TYPE_NUMBER) {
-	    value = comparisonVal->literal.literal_num;
+	    value = comparisonVal->value.literal_num;
 	    value_free(comparisonVal); value_free(equalityRVal);
 	    return value_newNumber(value);
 	} else if (equalityRVal->type == TYPE_NUMBER && comparisonVal->type == TYPE_NUMBER) {
 	    // Apply the operation based on equalityRVal's metadata
-	    value = comparisonVal->literal.literal_num;
-	    double rvalue = equalityRVal->literal.literal_num;
+	    value = comparisonVal->value.literal_num;
+	    double rvalue = equalityRVal->value.literal_num;
 	    int child_op = equalityRVal->metadata;
 	    if (child_op == 0)
 		value = value == rvalue; //TODO: handle errors
@@ -563,7 +580,7 @@ ExecValue *execEquality(ASTNode *equality)
     return criticalError("Invalid children for equality.");
 }
 
-ExecValue *execExpr(ASTNode *expr)
+ExecValue *execExpr(Context* ctx, ASTNode *expr)
 {
     if (expr->type != SYM_EXPR)
 	return criticalError("Given invalid value for execExpr.");
@@ -571,23 +588,23 @@ ExecValue *execExpr(ASTNode *expr)
     if (expr->numChildren != 1)
 	return criticalError("Number of children of expr not 1.");
 
-    return execEquality(expr->children[0]);
+    return execEquality(ctx, expr->children[0]);
 }
 
-ExecValue *execPrntStmt(ASTNode *prntStmt)
+ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 {
     if (prntStmt->numChildren == 3 &&
 	prntStmt->children[0]->tok->type == TOKEN_PRINT &&
 	prntStmt->children[1]->type == SYM_EXPR &&
 	prntStmt->children[2]->tok->type == TOKEN_NL) {
-	ExecValue *exprResult = execExpr(prntStmt->children[1]);
+	ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
 
 	switch (exprResult->type) {
 	case TYPE_STRING:
-	    printf("%s", exprResult->literal.literal_str);
+	    printf("%s", exprResult->value.literal_str);
 	    break;
 	case TYPE_NUMBER:
-	    printf("%f", exprResult->literal.literal_num);
+	    printf("%f", exprResult->value.literal_num);
 	    break;
 	case TYPE_NULL:
 	    printf("(null)");
@@ -599,37 +616,38 @@ ExecValue *execPrntStmt(ASTNode *prntStmt)
     return criticalError("Invalid print statement.");
 }
 
-ExecValue *execExprStmt(ASTNode *exprStmt)
+ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 {
     if (exprStmt->numChildren == 2 &&
 	exprStmt->children[0]->type == SYM_EXPR &&
 	exprStmt->children[1]->tok->type == TOKEN_NL) {
-	ExecValue *exprResult = execExpr(exprStmt->children[0]);
+	ExecValue *exprResult = execExpr(ctx, exprStmt->children[0]);
 	value_free(exprResult);
 	return value_newNull();
     }
     return criticalError("Invalid expr statement.");
 }
 
-ExecValue *execStmt(ASTNode *stmt)
+ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 {
     if (stmt->numChildren == 1) {
 	if (stmt->children[0]->type == SYM_EXPR_STMT)
-	    return execExprStmt(stmt->children[0]);
+	    return execExprStmt(ctx, stmt->children[0]);
 	if (stmt->children[0]->type == SYM_PRNT_STMT)
-	    return execPrntStmt(stmt->children[0]);
+	    return execPrntStmt(ctx, stmt->children[0]);
     }
     return criticalError("Invalid statement.");
 }
 
-ExecValue *execAsmt(ASTNode *asmt)
+ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 {
     if (asmt->numChildren == 4 &&
 	asmt->children[0]->tok->type == TOKEN_IDENTIFIER &&
 	asmt->children[1]->tok->type == TOKEN_EQUAL &&
 	asmt->children[2]->type == SYM_EXPR &&
 	asmt->children[3]->tok->type == TOKEN_NL) {
-	ExecValue *rvalue = execExpr(asmt->children[2]);
+	ExecValue *lvalue = execTerminal(ctx, asmt->children[0]);
+	ExecValue *rvalue = execExpr(ctx, asmt->children[2]);
 	// TODO: implement symbol table assignment
 	value_free(rvalue);
 	return value_newNull();
@@ -637,13 +655,13 @@ ExecValue *execAsmt(ASTNode *asmt)
     return criticalError("Invalid assignment.");
 }
 
-ExecValue *execLine(ASTNode *line)
+ExecValue *execLine(Context* ctx, ASTNode *line)
 {
     if (line->numChildren == 1) {
 	if (line->children[0]->type == SYM_ASMT)
-	    return execAsmt(line->children[0]);
+	    return execAsmt(ctx, line->children[0]);
 	if (line->children[0]->type == SYM_STMT)
-	    return execStmt(line->children[0]);
+	    return execStmt(ctx, line->children[0]);
     }
     return criticalError("Invalid line.");
 }
@@ -653,11 +671,12 @@ ExecValue *execStart(ASTNode *start)
     // Returns the execution exit code
     //TODO: all runtime errors here
     int exitCode = 0;
+    Context *globalContext = context_new(NULL, NULL);
     for (size_t i = 0; i < start->numChildren; i++) {
 	ASTNode *child = start->children[0];
 	ExecValue *result;
 	if (child->type == SYM_LINE)
-	    result = execLine(child);
+	    result = execLine(globalContext, child);
 	else if (child->tok->type == TOKEN_EOF)
 	    break;
 	else
