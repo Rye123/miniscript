@@ -48,12 +48,18 @@ bool exactMatch(const char* word, const char* test, const int testLen)
 
 void token_print(Token *token)
 {
-    printf("Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}\n", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
+    if (token->type == TOKEN_NL)
+	printf("Token: { type: %s (%d), lexeme: \"\\n\", line: %d, col: %d }\n", TokenTypeString[token->type], token->type, token->lineNum, token->colNum);
+    else
+	printf("Token: { type: %s (%d), lexeme: \"%s\", line: %d, col: %d }\n", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
 }
 
 void token_string(char* str, const Token *token)
 {
-    sprintf(str, "Token: { type: %s (%d), lexeme: %s, line: %d, col: %d}", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
+    if (token->type == TOKEN_NL)
+	sprintf(str, "Token: { type: %s (%d), lexeme: \"\\n\", line: %d, col: %d }", TokenTypeString[token->type], token->type, token->lineNum, token->colNum);
+    else
+	sprintf(str, "Token: { type: %s (%d), lexeme: \"%s\", line: %d, col: %d }", TokenTypeString[token->type], token->type, token->lexeme, token->lineNum, token->colNum);
 }
 
 void token_free(Token* token)

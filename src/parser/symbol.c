@@ -30,7 +30,10 @@ void astnode_free(ASTNode *node)
 void astnode_print(ASTNode *node)
 {
   if (node->type == SYM_TERMINAL) {
-      printf("%s(%s('%s'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type], node->tok->lexeme);
+      if (node->tok->type == TOKEN_NL)
+	  printf("%s(%s('\\n'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
+      else
+	  printf("%s(%s('%s'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type], node->tok->lexeme);
       return;
   } else
       printf("%s", SymbolTypeString[node->type]);
