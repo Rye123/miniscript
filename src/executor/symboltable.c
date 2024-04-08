@@ -57,6 +57,16 @@ ExecSymbol *context_getSymbolWalk(Context *ctx, ExecValue *identifier)
     return NULL;
 }
 
+ExecValue *context_getValue(Context *ctx, ExecValue *identifier)
+{
+    ExecSymbol *sym = context_getSymbol(ctx, identifier);
+    if (sym == NULL)
+	return NULL;
+    ExecValue *val = malloc(sizeof(ExecValue));
+    memcpy(val, sym->value, sizeof(ExecValue));
+    return val;
+}
+
 void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value)
 {
     ExecSymbol *sym = context_getSymbol(ctx, identifier);

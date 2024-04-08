@@ -9,6 +9,8 @@ typedef enum {
     TYPE_IDENTIFIER
 } ValueType;
 
+static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER"};
+
 typedef struct {
     ValueType type;
     union {
@@ -41,6 +43,9 @@ void context_addSymbol(Context* ctx, ExecValue* identifier);
 
 // Returns the ExecSymbol associated with an identifier, or NULL if there is no such identifier.
 ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier);
+
+// Returns a COPY of the ExecValue associated with identifier, or NULL if there is no such identifier
+ExecValue *context_getValue(Context *ctx, ExecValue *identifier);
 
 // Returns the ExecSymbol in the local or the GLOBAL scope.
 ExecSymbol *context_getSymbolWalk(Context *ctx, ExecValue *identifier);

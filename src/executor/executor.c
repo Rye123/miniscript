@@ -28,9 +28,7 @@ ExecValue *value_newString(char *strValue)
     val->type = TYPE_STRING;
 
     // Create null-terminated copy of the string
-    char *str_cpy = malloc(strlen(strValue) * sizeof(char));
-    if (strValue != NULL)
-	memcpy(str_cpy, strValue, strlen(strValue));
+    char *str_cpy = strdup(strValue);
     val->value.literal_str = str_cpy;
     val->metadata = -1;
     return val;
@@ -51,9 +49,7 @@ ExecValue *value_newIdentifier(char *identifierName)
     val->type = TYPE_IDENTIFIER;
 
     // Create null-terminated copy of the identifier name
-    char *name_cpy = malloc(strlen(identifierName) * sizeof(char));
-    if (identifierName != NULL)
-	memcpy(name_cpy, identifierName, strlen(identifierName));
+    char *name_cpy = strdup(identifierName);
     val->value.identifier_name = name_cpy;
     return val;
 }
@@ -128,20 +124,18 @@ ExecValue *execPower(Context* ctx, ASTNode *power)
 	
 	if (lVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, lVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, lVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(lVal);
 	    lVal = newVal;
 	}
 
 	if (rVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, rVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, lVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(rVal);
 	    rVal = newVal;
 	}
@@ -183,10 +177,9 @@ ExecValue *execUnary(Context* ctx, ASTNode *unary)
 
 	if (rVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, rVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, rVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(rVal);
 	    rVal = newVal;
 	}
@@ -232,20 +225,18 @@ ExecValue *execTermR(Context* ctx, ASTNode *termR)
 
 	if (termVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, termVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, termVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(termVal);
 	    termVal = newVal;
 	}
 
 	if (termRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, termRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, termRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(termRVal);
 	    termRVal = newVal;
 	}
@@ -301,20 +292,18 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
 
 	if (unaryVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, unaryVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, unaryVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(unaryVal);
 	    unaryVal = newVal;
 	}
 
 	if (termRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, termRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, termRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(termRVal);
 	    termRVal = newVal;
 	}
@@ -375,20 +364,18 @@ ExecValue *execSumR(Context* ctx, ASTNode *sumR)
 
 	if (sumVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, sumVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, sumVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(sumVal);
 	    sumVal = newVal;
 	}
 	
         if (sumRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, sumRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, sumRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(sumRVal);
 	    sumRVal = newVal;
 	}
@@ -442,10 +429,9 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
 
 	if (termVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, termVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, termVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(termVal);
 	    termVal = newVal;
 	}
@@ -514,20 +500,18 @@ ExecValue *execComparisonR(Context* ctx, ASTNode *comparisonR)
 
 	if (comparisonVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, comparisonVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, comparisonVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(comparisonVal);
 	    comparisonVal = newVal;
 	}
 	
         if (comparisonRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, comparisonRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, comparisonRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(comparisonRVal);
 	    comparisonRVal = newVal;
 	}
@@ -585,20 +569,18 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 
         if (sumVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, sumVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, sumVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(sumVal);
 	    sumVal = newVal;
 	}
 	
         if (comparisonRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, comparisonRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, comparisonRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(comparisonRVal);
 	    comparisonRVal = newVal;
 	}
@@ -659,20 +641,18 @@ ExecValue *execEqualityR(Context* ctx, ASTNode *equalityR)
 
         if (equalityVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, equalityVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, equalityVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(equalityVal);
 	    equalityVal = newVal;
 	}
 	
         if (equalityRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, equalityRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, equalityRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(equalityRVal);
 	    equalityRVal = newVal;
 	}
@@ -726,20 +706,18 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
 
         if (comparisonVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, comparisonVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, comparisonVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(comparisonVal);
 	    comparisonVal = newVal;
 	}
 	
         if (equalityRVal->type == TYPE_IDENTIFIER) {
 	    // Extract symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, equalityRVal);
-	    if (sym == NULL)
+	    ExecValue *newVal = context_getValue(ctx, equalityRVal);
+	    if (newVal == NULL)
 		return criticalError("Undeclared identifier.");
-	    ExecValue *newVal = sym->value;
 	    value_free(equalityRVal);
 	    equalityRVal = newVal;
 	}
