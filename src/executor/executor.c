@@ -400,7 +400,7 @@ ExecValue *execSumR(Context* ctx, ASTNode *sumR)
 	} else {
 	    value_free(sumVal);
 	    value_free(sumRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("sumR: Invalid type of child, expected numbers for both symbols.");
 	}
 	
 	ExecValue *insumVal = value_newNumber(value);
@@ -859,7 +859,7 @@ ExecValue *execStart(Context* ctx, ASTNode *start)
     //TODO: all runtime errors here
     int exitCode = 0;
     for (size_t i = 0; i < start->numChildren; i++) {
-	ASTNode *child = start->children[0];
+	ASTNode *child = start->children[i];
 	ExecValue *result;
 	if (child->type == SYM_LINE)
 	    result = execLine(ctx, child);
