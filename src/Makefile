@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g
 LFLAGS = -lm
-OBJS = interpreter.o executor/executor.o parser/parser.o parser/symbol.o lexer/lexer.o lexer/token.o
+OBJS = interpreter.o executor/executor.o executor/symboltable.o parser/parser.o parser/symbol.o lexer/lexer.o lexer/token.o
 
 all: main
 

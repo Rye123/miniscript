@@ -2,9 +2,27 @@
 #define _SYMBOLTABLE_H_
 #include "executor.h"
 
+typedef enum {
+    TYPE_NUMBER,
+    TYPE_STRING,
+    TYPE_NULL,
+    TYPE_IDENTIFIER
+} ValueType;
+
+typedef struct {
+    ValueType type;
+    union {
+	void* literal_null;
+	double literal_num;
+	char* literal_str;
+	char* identifier_name;
+    } value;
+    int metadata; // dependent on the node, typically this is used by *_R nodes to store data for their parents.
+} ExecValue;
+
 // A unique identifier in the current scope, not to be confused with the Symbol from parsing.
 typedef struct {
-    const char* symbolName;
+    char* symbolName;
     ExecValue*  value;
 } ExecSymbol;  
 
@@ -23,6 +41,9 @@ void context_addSymbol(Context* ctx, ExecValue* identifier);
 
 // Returns the ExecSymbol associated with an identifier, or NULL if there is no such identifier.
 ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier);
+
+// Returns the ExecSymbol in the local or the GLOBAL scope.
+ExecSymbol *context_getSymbolWalk(Context *ctx, ExecValue *identifier);
 
 // Modifies the ExecSymbol associated with an identifier.
 void context_setSymbol(Context* ctx, ExecValue* identifier, ExecValue* value);

@@ -55,6 +55,7 @@ ExecValue *value_newIdentifier(char *identifierName)
     if (identifierName != NULL)
 	memcpy(name_cpy, identifierName, strlen(identifierName));
     val->value.identifier_name = name_cpy;
+    return val;
 }
 
 void value_free(ExecValue *value)
@@ -124,6 +125,26 @@ ExecValue *execPower(Context* ctx, ASTNode *power)
 	    criticalError("Invalid middle token for execPower.");
 	ExecValue *lVal = execPrimary(ctx, power->children[0]);
 	ExecValue *rVal = execUnary(ctx, power->children[2]);
+	
+	if (lVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, lVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(lVal);
+	    lVal = newVal;
+	}
+
+	if (rVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, rVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(rVal);
+	    rVal = newVal;
+	}
 
 	if (lVal->type != TYPE_NUMBER || rVal->type != TYPE_NUMBER) {
 	    printf("Semantic Error: Operation ^ is valid only between numbers.\n");
@@ -158,6 +179,18 @@ ExecValue *execUnary(Context* ctx, ASTNode *unary)
 	else
 	    return criticalError("Invalid first child of unary.");
 	ExecValue *rVal = execUnary(ctx, unary->children[1]);
+	
+
+	if (rVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, rVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(rVal);
+	    rVal = newVal;
+	}
+	
 	if (rVal->type != TYPE_NUMBER) {
 	    printf("Semantic Error: Only a number can be unary.\n");
 	    value_free(rVal);
@@ -196,6 +229,26 @@ ExecValue *execTermR(Context* ctx, ASTNode *termR)
 	ExecValue *termVal = execTerm(ctx, termR->children[1]);
 	ExecValue *termRVal = execTermR(ctx, termR->children[2]);
 	double value;
+
+	if (termVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, termVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(termVal);
+	    termVal = newVal;
+	}
+
+	if (termRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, termRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(termRVal);
+	    termRVal = newVal;
+	}
 	
 	if (termRVal->type == TYPE_NULL && termVal->type == TYPE_NUMBER) {
 	    value = termVal->value.literal_num;
@@ -219,7 +272,7 @@ ExecValue *execTermR(Context* ctx, ASTNode *termR)
 	} else {
 	    value_free(termVal);
 	    value_free(termRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("termR: Invalid type of child, expected numbers for both symbols.");
 	}
 	
 	ExecValue *intermVal = value_newNumber(value);
@@ -246,6 +299,26 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
 	ExecValue *termRVal = execTermR(ctx, term->children[1]);
 	double value;
 
+	if (unaryVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, unaryVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(unaryVal);
+	    unaryVal = newVal;
+	}
+
+	if (termRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, termRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(termRVal);
+	    termRVal = newVal;
+	}
+
 	if (unaryVal->type == TYPE_STRING && termRVal->type == TYPE_NULL) {
 	    value_free(termRVal); return unaryVal;
 	} else if (unaryVal->type == TYPE_NUMBER && termRVal->type == TYPE_NULL) {
@@ -268,7 +341,7 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
 	    }
 	} else {
 	    value_free(unaryVal); value_free(termRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("term: Invalid type of child, expected numbers for both symbols.");
 	}
 
         return value_newNumber(value);
@@ -299,6 +372,26 @@ ExecValue *execSumR(Context* ctx, ASTNode *sumR)
 	ExecValue *sumVal = execSum(ctx, sumR->children[1]);
 	ExecValue *sumRVal = execSumR(ctx, sumR->children[2]);
 	double value;
+
+	if (sumVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, sumVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(sumVal);
+	    sumVal = newVal;
+	}
+	
+        if (sumRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, sumRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(sumRVal);
+	    sumRVal = newVal;
+	}
 	
 	if (sumRVal->type == TYPE_NULL && sumVal->type == TYPE_NUMBER) {
 	    value = sumVal->value.literal_num;
@@ -346,6 +439,26 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
 	ExecValue *termVal = execTerm(ctx, sum->children[0]);
 	ExecValue *sumRVal = execSumR(ctx, sum->children[1]);
 	double value;
+
+	if (termVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, termVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(termVal);
+	    termVal = newVal;
+	}
+	
+        if (sumRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, sumRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(sumRVal);
+	    sumRVal = newVal;
+	}	
 
 	if (termVal->type == TYPE_NUMBER && sumRVal->type == TYPE_NULL) {
 	    value = termVal->value.literal_num;
@@ -398,6 +511,26 @@ ExecValue *execComparisonR(Context* ctx, ASTNode *comparisonR)
 	ExecValue *comparisonVal = execComparison(ctx, comparisonR->children[1]);
 	ExecValue *comparisonRVal = execComparisonR(ctx, comparisonR->children[2]);
 	double value;
+
+	if (comparisonVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, comparisonVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(comparisonVal);
+	    comparisonVal = newVal;
+	}
+	
+        if (comparisonRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, comparisonRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(comparisonRVal);
+	    comparisonRVal = newVal;
+	}
 	
 	if (comparisonRVal->type == TYPE_NULL && comparisonVal->type == TYPE_NUMBER) {
 	    value = comparisonVal->value.literal_num;
@@ -423,7 +556,7 @@ ExecValue *execComparisonR(Context* ctx, ASTNode *comparisonR)
 	} else {
 	    value_free(comparisonVal);
 	    value_free(comparisonRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("comparisonR: Invalid type of child, expected numbers for both symbols.");
 	}
 	
 	ExecValue *intermediateVal = value_newNumber(value);
@@ -450,6 +583,26 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 	ExecValue *comparisonRVal = execComparisonR(ctx, comparison->children[1]);
 	double value;
 
+        if (sumVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, sumVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(sumVal);
+	    sumVal = newVal;
+	}
+	
+        if (comparisonRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, comparisonRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(comparisonRVal);
+	    comparisonRVal = newVal;
+	}
+
 	if (sumVal->type == TYPE_NUMBER && comparisonRVal->type == TYPE_NULL) {
 	    value = sumVal->value.literal_num;
 	    value_free(sumVal); value_free(comparisonRVal);
@@ -474,7 +627,7 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 	    return value_newNumber(value);
 	} else {
 	    value_free(sumVal); value_free(comparisonRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("comparison: Invalid type of child, expected numbers for both symbols.");
 	}
     }
 
@@ -503,6 +656,26 @@ ExecValue *execEqualityR(Context* ctx, ASTNode *equalityR)
 	ExecValue *equalityVal = execEquality(ctx, equalityR->children[1]);
 	ExecValue *equalityRVal = execEqualityR(ctx, equalityR->children[2]);
 	double value;
+
+        if (equalityVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, equalityVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(equalityVal);
+	    equalityVal = newVal;
+	}
+	
+        if (equalityRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, equalityRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(equalityRVal);
+	    equalityRVal = newVal;
+	}
 	
 	if (equalityRVal->type == TYPE_NULL && equalityVal->type == TYPE_NUMBER) {
 	    value = equalityVal->value.literal_num;
@@ -524,7 +697,7 @@ ExecValue *execEqualityR(Context* ctx, ASTNode *equalityR)
 	} else {
 	    value_free(equalityVal);
 	    value_free(equalityRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("equalityR: Invalid type of child, expected numbers for both symbols.");
 	}
 	
 	ExecValue *intermediateVal = value_newNumber(value);
@@ -550,6 +723,26 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
 	ExecValue *comparisonVal = execComparison(ctx, equality->children[0]);
 	ExecValue *equalityRVal = execEqualityR(ctx, equality->children[1]);
 	double value;
+
+        if (comparisonVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, comparisonVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(comparisonVal);
+	    comparisonVal = newVal;
+	}
+	
+        if (equalityRVal->type == TYPE_IDENTIFIER) {
+	    // Extract symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, equalityRVal);
+	    if (sym == NULL)
+		return criticalError("Undeclared identifier.");
+	    ExecValue *newVal = sym->value;
+	    value_free(equalityRVal);
+	    equalityRVal = newVal;
+	}
 	
 	if (equalityRVal->type == TYPE_NULL && comparisonVal->type == TYPE_NUMBER) {
 	    value = comparisonVal->value.literal_num;
@@ -571,7 +764,7 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
 	    value_free(comparisonVal); value_free(equalityRVal);
 	} else {
 	    value_free(comparisonVal); value_free(equalityRVal);
-	    return criticalError("Invalid type of child, expected numbers for both symbols.");
+	    return criticalError("equality: Invalid type of child, expected numbers for both symbols.");
 	}
 
         return value_newNumber(value);
@@ -599,8 +792,18 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 	prntStmt->children[2]->tok->type == TOKEN_NL) {
 	ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
 
+	if (exprResult->type == TYPE_IDENTIFIER) {
+	    // Get symbol value
+	    ExecSymbol *sym = context_getSymbol(ctx, exprResult);
+	    exprResult = sym->value;
+	}
+	
 	switch (exprResult->type) {
-	case TYPE_STRING:
+	case TYPE_IDENTIFIER:
+	    printf("ERROR: Identifier value was another identifier\n");
+	    exit(1);
+	    break;
+        case TYPE_STRING:
 	    printf("%s", exprResult->value.literal_str);
 	    break;
 	case TYPE_NUMBER:
@@ -649,7 +852,13 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 	ExecValue *lvalue = execTerminal(ctx, asmt->children[0]);
 	ExecValue *rvalue = execExpr(ctx, asmt->children[2]);
 	// TODO: implement symbol table assignment
-	value_free(rvalue);
+	// There's no explicit declaration in Miniscript, so we check the symbol table -- if it isn't there, we declare it
+	ExecSymbol *sym = context_getSymbol(ctx, lvalue);
+        if (sym == NULL)
+	    context_addSymbol(ctx, lvalue);
+        
+	context_setSymbol(ctx, lvalue, rvalue);
+        value_free(lvalue); value_free(rvalue);
 	return value_newNull();
     }
     return criticalError("Invalid assignment.");
@@ -666,17 +875,16 @@ ExecValue *execLine(Context* ctx, ASTNode *line)
     return criticalError("Invalid line.");
 }
 
-ExecValue *execStart(ASTNode *start)
+ExecValue *execStart(Context* ctx, ASTNode *start)
 {
     // Returns the execution exit code
     //TODO: all runtime errors here
     int exitCode = 0;
-    Context *globalContext = context_new(NULL, NULL);
     for (size_t i = 0; i < start->numChildren; i++) {
 	ASTNode *child = start->children[0];
 	ExecValue *result;
 	if (child->type == SYM_LINE)
-	    result = execLine(globalContext, child);
+	    result = execLine(ctx, child);
 	else if (child->tok->type == TOKEN_EOF)
 	    break;
 	else

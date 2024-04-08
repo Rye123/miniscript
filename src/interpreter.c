@@ -6,9 +6,10 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "executor/executor.h"
+#include "executor/symboltable.h"
 #define LINE_MAX 255
 
-void runLine(const char* source)
+void runLine(const char* source, Context *executionContext)
 {
     printf("ENTERED: %s\n", source);
     // Lexical Analysis
@@ -32,8 +33,8 @@ void runLine(const char* source)
 
     // Execution
     printf("\n--- EXECUTION RESULT ---\n");
-    ExecValue *val = execStart(root);
-    printf("\nExit Code: %f\n", val->literal.literal_num);
+    ExecValue *val = execStart(executionContext, root);
+    printf("\nExit Code: %f\n", val->value.literal_num);
     value_free(val);
 
     // Cleanup
@@ -71,9 +72,10 @@ void runFile(const char* fname)
     fclose(srcFile);
 
     // Run each line individually
+    Context *globalCtx = context_new(NULL, NULL);
     char *line = strtok(source, "\n");
     while (line != NULL) {
-        runLine(line);
+        runLine(line, globalCtx);
         line = strtok(NULL, "\n");
     }
 }
@@ -81,12 +83,13 @@ void runFile(const char* fname)
 void runREPL()
 {
     char buffer[LINE_MAX];
+    Context *globalCtx = context_new(NULL, NULL);
     printf("Miniscript 0.1\n");
     while (1) {
         printf(">> ");
         if (fgets(buffer, LINE_MAX, stdin) == NULL)
             break;
-        runLine(buffer);
+        runLine(buffer, globalCtx);
     }
 }
 
