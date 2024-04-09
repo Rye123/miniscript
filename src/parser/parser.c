@@ -216,12 +216,69 @@ void parseEquality(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     astnode_addChildNode(parent, self);
 }
 
-// Parse an expression of tokens, starting from position `start`.
+void parseLogUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseLogUnary", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_LOG_UNARY, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type == TOKEN_NOT) {
+	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+	parseLogUnary(self, tokens, tokensLen, curIdx);
+    } else {
+	parseEquality(self, tokens, tokensLen, curIdx);
+    }
+    astnode_addChildNode(parent, self);
+}
+
+void parseAndExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseAndExprR", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_AND_EXPR_R, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type == TOKEN_AND) {
+	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+	parseAndExpr(self, tokens, tokensLen, curIdx);
+	parseAndExprR(self, tokens, tokensLen, curIdx);
+    }
+    astnode_addChildNode(parent, self);
+}
+
+void parseAndExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseAndExpr", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_AND_EXPR, NULL);
+    parseLogUnary(self, tokens, tokensLen, curIdx);
+    parseAndExprR(self, tokens, tokensLen, curIdx);
+    astnode_addChildNode(parent, self);
+}
+
+void parseOrExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseOrExprR", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_OR_EXPR_R, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type == TOKEN_OR) {
+	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+	parseOrExpr(self, tokens, tokensLen, curIdx);
+	parseOrExprR(self, tokens, tokensLen, curIdx);
+    }
+    astnode_addChildNode(parent, self);
+}
+
+void parseOrExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseOrExpr", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_OR_EXPR, NULL);
+    parseAndExpr(self, tokens, tokensLen, curIdx);
+    parseOrExprR(self, tokens, tokensLen, curIdx);
+    astnode_addChildNode(parent, self);
+}
+
 void parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseExpr", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_EXPR, NULL);
-    parseEquality(self, tokens, tokensLen, curIdx);
+    parseOrExpr(self, tokens, tokensLen, curIdx);
     astnode_addChildNode(parent, self);
 }
 
