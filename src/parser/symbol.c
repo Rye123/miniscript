@@ -251,7 +251,7 @@ void _astnode_left_skew_rec(ASTNode *node)
     if (node->type == SYM_TERMINAL)
 	return;
     for (size_t i = 0; i < node->numChildren; i++) {
-	printf("node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i);
+	//printf("node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i);
 	_astnode_left_skew_rec(node->children[i]);
     }
     switch (node->type) {
