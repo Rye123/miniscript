@@ -19,7 +19,6 @@ typedef struct {
 	char* literal_str;
 	char* identifier_name;
     } value;
-    int metadata; // dependent on the node, typically this is used by *_R nodes to store data for their parents.
 } ExecValue;
 
 // A unique identifier in the current scope, not to be confused with the Symbol from parsing.
@@ -46,6 +45,13 @@ ExecValue* value_newNull();
 ExecValue* value_newString(char* strValue);
 ExecValue* value_newNumber(double numValue);
 ExecValue* value_newIdentifier(char *identifierName);
+
+// Clones an ExecValue
+ExecValue* value_clone(ExecValue *val);
+
+// Frees an ExecValue
+void value_free(ExecValue *value);
+
 
 // Returns the ExecSymbol associated with an identifier, or NULL if there is no such identifier.
 ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier);

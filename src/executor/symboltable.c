@@ -53,7 +53,6 @@ ExecValue *value_newNull()
     ExecValue* val = malloc(sizeof(ExecValue));
     val->type = TYPE_NULL;
     val->value.literal_null = NULL;
-    val->metadata = -1;
     return val;
 }
 
@@ -65,7 +64,6 @@ ExecValue *value_newString(char *strValue)
     // Create null-terminated copy of the string
     char *str_cpy = strdup(strValue);
     val->value.literal_str = str_cpy;
-    val->metadata = -1;
     return val;
 }
 
@@ -74,7 +72,6 @@ ExecValue *value_newNumber(double numValue)
     ExecValue* val = malloc(sizeof(ExecValue));
     val->type = TYPE_NUMBER;
     val->value.literal_num = numValue;
-    val->metadata = -1;
     return val;
 }
 
@@ -87,6 +84,32 @@ ExecValue *value_newIdentifier(char *identifierName)
     char *name_cpy = strdup(identifierName);
     val->value.identifier_name = name_cpy;
     return val;
+}
+
+ExecValue *value_clone(ExecValue *value)
+{
+    switch (value->type) {
+    case TYPE_STRING: return value_newString(value->value.literal_str);
+    case TYPE_NUMBER:
+	return value_newNumber(value->value.literal_num);
+    case TYPE_NULL:
+	return value_newNull();
+    case TYPE_IDENTIFIER:
+	return value_newIdentifier(value->value.identifier_name);
+    default:
+	printf("Critical Error: value_clone: Unknown ValueType %d.\n", value->type);
+	exit(1);
+    }
+    return NULL;
+}
+
+void value_free(ExecValue *value)
+{
+    if (value->type == TYPE_STRING)
+	free(value->value.literal_str);
+    if (value->type == TYPE_IDENTIFIER)
+	free(value->value.identifier_name);
+    free(value);
 }
 
 ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier)
@@ -119,9 +142,7 @@ ExecValue *context_getValue(Context *ctx, ExecValue *identifier)
     ExecSymbol *sym = context_getSymbol(ctx, identifier);
     if (sym == NULL)
 	return NULL;
-    ExecValue *val = malloc(sizeof(ExecValue));
-    memcpy(val, sym->value, sizeof(ExecValue));
-    return val;
+    return value_clone(sym->value);
 }
 
 void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value)
@@ -132,8 +153,12 @@ void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value)
 	exit(1);
     }
 
-    // Copy the contents of the value
-    sym->value = memcpy(sym->value, value, sizeof(ExecValue));
+    // Define a new ExecValue -- this is to allow the given value to be deallocated later
+    ExecValue *newValue = value_clone(value);
+
+    // Set the new value
+    value_free(sym->value);
+    sym->value = newValue;
     printf("Symbol %s set to %f\n", sym->symbolName, sym->value->value.literal_num);
 }
 

@@ -4,8 +4,6 @@
 #include "../parser/symbol.h"
 #include "symboltable.h"
 
-void value_free(ExecValue *value);
-
 /**
 execSymbol:
 - Returns NULL, or the evaluated ExecValue*.

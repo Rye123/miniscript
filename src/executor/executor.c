@@ -6,15 +6,6 @@
 #include "executor.h"
 #include "symboltable.h"
 
-void value_free(ExecValue *value)
-{
-    if (value->type == TYPE_STRING)
-	free(value->value.literal_str);
-    if (value->type == TYPE_IDENTIFIER)
-	free(value->value.identifier_name);
-    free(value);
-}
-
 ExecValue *execTerminal(Context* ctx, ASTNode *terminal)
 {
     if (terminal->type != SYM_TERMINAL)
