@@ -30,14 +30,14 @@ void runLine(const char* source, Context *executionContext)
     // 3. Syntactic Analysis
     ASTNode *root = astnode_new(SYM_START, NULL);
     parse(root, tokens, tokenCount);
-    printf("\n--- PARSING RESULT ---\n");
+    printf("\n--- PARSE TREE ---\n");
     astnode_print(root);
     printf("\n");
 
-    //printf("\n--- AST RESULT ---\n");
-    //astnode_gen(root);
-    //astnode_print(root);
-    //printf("\n");
+    printf("\n--- AST ---\n");
+    astnode_gen(root);
+    astnode_print(root);
+    printf("\n");
 
     // Execution
     printf("\n--- EXECUTION RESULT ---\n");

@@ -23,8 +23,10 @@ Token* token_new(TokenType type, const char* lexeme, const int lexemeLength, int
         Token tok = {type, lexeme_cpy, .literal.literal_num=literal_num, lineNum, colNum};
         memcpy(ret, &tok, sizeof(Token));
     } else if (type == TOKEN_STRING) {
-        Token tok = {type, lexeme_cpy, .literal.literal_str = lexeme_cpy, lineNum, colNum};
-        // TODO: remove first and last quotes
+	char *literal_str = malloc((lexemeLength - 1) * sizeof(char));
+	strncpy(literal_str, lexeme_cpy + 1, lexemeLength - 2);
+	literal_str[lexemeLength-2] = '\0';
+        Token tok = {type, lexeme_cpy, .literal.literal_str = literal_str, lineNum, colNum};
         memcpy(ret, &tok, sizeof(Token));
     } else {
         Token tok = {type, lexeme_cpy, .literal.literal_null=NULL, lineNum, colNum};

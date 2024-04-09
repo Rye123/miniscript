@@ -4,7 +4,7 @@
 #include "../lexer/token.h"
 
 /**
-Standard
+Standard -- this is used by the executor
      START      -> LINE* EOF
      LINE       -> ASMT  | STMT
      ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
@@ -12,7 +12,7 @@ Standard
      EXPR_STMT  -> EXPR EOL
      PRNT_STMT  -> TOKEN_PRINT EXPR EOL
      EXPR       -> EQUALITY
-(LR) EQUALITY   -> COMPARISON == EQUALITY | COMPARISON != EQUALITY | COMPARISON
+(LR) EQUALITY   -> EQUALITY == COMPARISON | EQUALITY != COMPARISON | COMPARISON
 (LR) COMPARISON -> SUM > COMPARISON | SUM >= COMPARISON | SUM < COMPARISON | SUM <= COMPARISON | SUM
 (LR) SUM        -> SUM + TERM | SUM - TERM | TERM
 (LR) TERM       -> TERM * UNARY | TERM / UNARY | TERM % UNARY | UNARY
@@ -20,7 +20,7 @@ Standard
 (RR) POWER      -> PRIMARY ^ UNARY | PRIMARY
      PRIMARY    -> TERMINAL | ( EXPR )
 
-Left-Recursion Fixed
+Left-Recursion Fixed -- this is used by the parser, then converted to the above afterwards to re-introduce left-recursion
 START        -> LINE* EOF
 LINE         -> ASMT | STMT
 ASMT         -> IDENTIFIER = EXPR EOL
@@ -78,7 +78,6 @@ static const char* SymbolTypeString[] = {
 // Returns 0 if the token is unimplemented, 1 if it's intended to be implemented.
 int isTokenUnimplemented(Token tok);
 
-
 typedef struct _astnode {
     SymbolType type;
     Token *tok;
@@ -98,5 +97,10 @@ void astnode_addChildNode(ASTNode *parent, ASTNode *child);
 
 // Adds a symbol with type `expectedType` as a child of this node.
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType);
+
+void astnode_clearChildren(ASTNode *node);
+
+// Converts from parse tree to AST (i.e. removes *_R nodes)
+ASTNode* astnode_gen(ASTNode *node);
 
 #endif

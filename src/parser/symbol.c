@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../lexer/token.h"
 #include "symbol.h"
 
@@ -84,7 +85,160 @@ void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok)
 
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType) { astnode_addChild(node, expectedType, NULL); }
 
-void astnode_eval(ASTNode *node)
+// Removes all *_R nodes from the parse tree to clean it up.
+void _astnode_remove_rec(ASTNode *node)
 {
+    size_t numChildren = node->numChildren;
+    ASTNode **children   = malloc(sizeof(ASTNode *) * numChildren);
+    memcpy(children, node->children, sizeof(ASTNode *) * numChildren);
     
+    node->numChildren = 0;
+    node->children = realloc(node->children, 0);
+    for (size_t i = 0; i < numChildren; i++) {
+	ASTNode *child = children[i];
+	// Expand the child prior to expansion
+	_astnode_remove_rec(child);
+	
+	SymbolType childType = children[i]->type;
+	switch (child->type) {
+	case SYM_EQUALITY_R:
+	case SYM_COMPARISON_R:
+	case SYM_SUM_R:
+	case SYM_TERM_R:
+            if (child->numChildren > 0) {
+		// Shift children up
+		//printf("\tAdd %lu children from %s\n", child->numChildren, SymbolTypeString[childType]);
+		for (size_t j = 0; j < child->numChildren; j++)
+		    astnode_addChildNode(node, child->children[j]);
+            }
+	    break;
+	    
+	default:
+	    //printf("\tAdd node %s\n", SymbolTypeString[childType]);
+	    astnode_addChildNode(node, child);
+	}
+    }
+    
+}
+
+// Rebalances a given node such that its subtree is left-skewed with respect to others of the same type.
+void _astnode_left_skew(ASTNode *node, SymbolType targetType)
+{
+    /*
+	      After removing *_Rs, the tree is in the form:
+	           (Node)
+		 /   |    \
+	       ...  SUM1   ...
+		  /  |  \
+	     TERM1   O1  SUM2
+		       /   |  \
+		  TERM2    O2  SUM3
+		             /  |   \
+		        TERM3   O3   SUM4
+			              |
+			             TERM4
+	      This makes it so the right values are evaluated first -- we don't want that!
+	      We want to rotate it to:
+	                    (Node)
+			  /   |    \
+	                ...  SUM4   ...
+			   /   |  \
+			SUM3   O3  TERM4
+		      /  |   \
+		  SUM2   O2   TERM3
+	        /  |  \
+	     SUM1  O1  TERM2
+	       |
+	     TERM1	   
+    */
+    size_t childIndex = -1;
+    ASTNode *curNode = NULL;
+    // Identify target node
+    for (size_t i = 0; i < node->numChildren; i++) {
+	if (node->children[i]->type == targetType) {
+	    curNode = node->children[i];
+	    childIndex = i;
+	    break;
+	}
+    }
+
+    ASTNode *rightChild = curNode->children[2];
+    ASTNode *curOp = curNode->children[1];
+    
+    while (rightChild != NULL) {
+	// Invariant: curNode is the current node with lchild, op, rchild.
+	// rchild is the same type as curNode.
+	// We want to rotate the tree such that curNode is the lchild of rchild.
+	// Further, we want to shift the operation up to the rchild's node.
+	ASTNode *nextRightChild = NULL;
+	ASTNode *nextOp = NULL;
+        if (rightChild->numChildren == 3) {
+	    nextRightChild = rightChild->children[2];
+	    nextOp = rightChild->children[1];
+        }
+
+        // 1. Remove right child and op from curNode (invariant: curNode is size 3)
+	curNode->numChildren -= 2;
+	curNode->children = realloc(curNode->children, sizeof(ASTNode) * curNode->numChildren);
+
+	// 2. Store right child's current lchild
+	size_t rcNumChildren = rightChild->numChildren;
+	ASTNode **rcChildren = malloc(sizeof(ASTNode *) * rcNumChildren);
+	rcChildren = memcpy(rcChildren, rightChild->children, sizeof(ASTNode *) * rcNumChildren);
+
+	// 3. Reorder right child's children such that it is: 
+	//    curNode curOp (current lchild of rChild)
+	rightChild->numChildren = 0;
+	rightChild->children = realloc(rightChild->children, 0);
+	astnode_addChildNode(rightChild, curNode);
+	astnode_addChildNode(rightChild, curOp);
+	for (size_t i = 0; i < rcNumChildren; i++)
+	    astnode_addChildNode(rightChild, rcChildren[i]);
+
+	// 4. Cleanup
+	free(rcChildren);
+
+	// 5. Ensure invariant
+	curNode = rightChild;
+	curOp = nextOp;
+	rightChild = nextRightChild;
+	node->children[childIndex] = curNode;
+    }
+}
+
+// Recursively applies the left skewing on left-recursive production rules.
+void _astnode_left_skew_rec(ASTNode *node)
+{
+    if (node->type == SYM_TERMINAL)
+	return;
+    for (size_t i = 0; i < node->numChildren; i++) {
+	//printf("node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i);
+	_astnode_left_skew_rec(node->children[i]);
+    }
+    switch (node->type) {
+    case SYM_EXPR:
+	_astnode_left_skew(node, SYM_EQUALITY);
+	break;
+    case SYM_EQUALITY:
+	_astnode_left_skew(node, SYM_COMPARISON);
+	break;
+    case SYM_COMPARISON:
+	_astnode_left_skew(node, SYM_SUM);
+	break;
+    case SYM_SUM:
+	_astnode_left_skew(node, SYM_TERM);
+	break;
+    default:
+	break;
+    }
+}
+
+ASTNode *astnode_gen(ASTNode *node)
+{
+    _astnode_remove_rec(node);
+
+    // 1. Recursively rebalance tree so that it's left-skewed.
+    _astnode_left_skew_rec(node);
+
+    return node;
 }

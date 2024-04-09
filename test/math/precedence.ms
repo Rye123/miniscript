@@ -10,17 +10,17 @@ print 2 + 6 / 3 // expect: 4
 // / has higher precedence than -.
 print 2 - 6 / 3 // expect: 0
 
-// < has higher precedence than ==.
-print 1 == 2 < 1 // expect: true
+// == has higher precedence than <.
+print 1 == 2 < 1 // expect: 0
 
-// > has higher precedence than ==.
-print 0 == 1 > 2 // expect: true
+// == has higher precedence than >.
+print 0 == 1 > 2 // expect: 0
 
-// <= has higher precedence than ==.
-print 0 == 2 <= 1 // expect: true
+// == has higher precedence than <=.
+print 0 == 2 <= 1 // expect: 0
 
-// >= has higher precedence than ==.
-print 0 == 1 >= 2 // expect: true
+// == has higher precedence than >=.
+print 0 == 1 >= 2 // expect: 0
 
 // 1 - 1 is not space-sensitive.
 print 1 - 1 // expect: 0
