@@ -478,50 +478,50 @@ ExecValue * execBlock(Context* ctx, ASTNode *block){
 }
 
 ExecValue *execElse(Context* ctx, ASTNode *elseStmt){
-	if (elseStmt->numChildren == 3) {
+    if (elseStmt->type != SYM_ELSE)
+        return criticalError("elsestmt: Invalid symbol type, expected SYM_ELSE");
+    
+	if (elseStmt->numChildren == 3)
 		return execBlock(ctx, elseStmt->children[2]);
-	} else {
-		return criticalError("Invalid line.");
-	}
+	else
+		return criticalError("execElse: Invalid line.");
+	
 }
 
 ExecValue *execElseIf(Context* ctx, ASTNode *elseIfStmt){
-	int isTrue = 0;
-	if (execExpr(ctx, elseIfStmt->children[2])->type==TYPE_NUMBER){
-		ExecValue *equalityVal = execExpr(ctx, elseIfStmt->children[2]);
-		isTrue = equalityVal->value.literal_num;
-	}
-	if (isTrue==1){
-		return execBlock(ctx, elseIfStmt->children[5]); //Execute block
-	} else {
-		if (elseIfStmt->numChildren==7){
-			if (elseIfStmt->children[6]->type == SYM_ELSEIF){
-				return execElseIf(ctx, elseIfStmt->children[6]);
-			} else if (elseIfStmt->children[6]->type == SYM_ELSE) {
-				return execElse(ctx, elseIfStmt->children[6]);
-			}
-			return criticalError("Invalid branch not else if or else.");
-		}
-		return value_newNull();
-	}
+    if (elseIfStmt->type != SYM_ELSEIF)
+        return criticalError("elseifstmt: Invalid symbol type, expected SYM_ELSEIF");
+
+    ExecValue *expr = execExpr(ctx, elseIfStmt->children[2]);
+    if (value_falsiness(expr) == 1) { // true branch
+        return execBlock(ctx, elseIfStmt->children[5]);
+    } else {
+        if (elseIfStmt->numChildren == 7) {
+            if (elseIfStmt->children[6]->type == SYM_ELSEIF)
+                return execElseIf(ctx, elseIfStmt->children[6]);
+            else if (elseIfStmt->children[6]->type == SYM_ELSE)
+                return execElse(ctx, elseIfStmt->children[6]);
+
+            return criticalError("execElseIf: Invalid branch -- not else if, or else");
+        }
+        return value_newNull();
+    }
 }
 
 ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
-	int isTrue = 0;
-	if (execExpr(ctx, ifStmt->children[1])->type==TYPE_NUMBER){
-		ExecValue *equalityVal = execExpr(ctx, ifStmt->children[1]);
-		isTrue = equalityVal->value.literal_num;
-	}
-	if (isTrue==1){
-		return execBlock(ctx, ifStmt->children[4]);
-	} else {
-		if (ifStmt->children[5]->type == SYM_ELSEIF){
-			return execElseIf(ctx, ifStmt->children[5]);
-		} else if (ifStmt->children[5]->type == SYM_ELSE) {
-			return execElse(ctx, ifStmt->children[5]);
-		}
-		return value_newNull();
-	}
+    if (ifStmt->type != SYM_IFSTMT)
+        return criticalError("ifstmt: Invalid symbol type, expected SYM_IFSTMT");
+
+    ExecValue *expr = execExpr(ctx, ifStmt->children[1]);
+    if (value_falsiness(expr) == 1) { // true branch
+        return execBlock(ctx, ifStmt->children[4]);
+    } else {
+        if (ifStmt->children[5]->type == SYM_ELSEIF)
+            return execElseIf(ctx, ifStmt->children[5]);
+        else if (ifStmt->children[5]->type == SYM_ELSE)
+            return execElse(ctx, ifStmt->children[5]);
+        return value_newNull();
+    }
 }
 
 ExecValue *execStmt(Context* ctx, ASTNode *stmt)
