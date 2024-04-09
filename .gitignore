@@ -1,6 +1,7 @@
 .ccls-cache/
 .DS_Store
 .vscode/
+*.idea/
 
 # Object Files
 *.o
@@ -9,3 +10,7 @@
 interpreter
 main
 lex_test
+miniscript
+
+# Log output
+*.log
