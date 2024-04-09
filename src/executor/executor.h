@@ -4,9 +4,6 @@
 #include "../parser/symbol.h"
 #include "symboltable.h"
 
-ExecValue* value_newNull();
-ExecValue* value_newString(char* strValue);
-ExecValue* value_newNumber(double numValue);
 void value_free(ExecValue *value);
 
 /**
@@ -21,13 +18,9 @@ ExecValue* execExprStmt(Context* ctx, ASTNode *exprStmt);
 ExecValue* execPrntStmt(Context* ctx, ASTNode *prntStmt);
 ExecValue* execExpr(Context* ctx, ASTNode* expr);
 ExecValue* execEquality(Context* ctx, ASTNode *equality);
-ExecValue* execEqualityR(Context* ctx, ASTNode *equalityR);
 ExecValue* execComparison(Context* ctx, ASTNode *comparison);
-ExecValue* execComparisonR(Context* ctx, ASTNode *comparisonR);
 ExecValue* execSum(Context* ctx, ASTNode *sum);
-ExecValue* execSumR(Context* ctx, ASTNode *sumR);
 ExecValue* execTerm(Context* ctx, ASTNode *term);
-ExecValue* execTermR(Context* ctx, ASTNode *termR);
 ExecValue* execUnary(Context* ctx, ASTNode *unary);
 ExecValue* execPower(Context* ctx, ASTNode *power);
 ExecValue* execPrimary(Context* ctx, ASTNode *primary);

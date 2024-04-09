@@ -4,7 +4,7 @@
 #include "../lexer/token.h"
 
 /**
-Standard
+Standard -- this is used by the executor
      START      -> LINE* EOF
      LINE       -> ASMT  | STMT
      ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
@@ -12,7 +12,7 @@ Standard
      EXPR_STMT  -> EXPR EOL
      PRNT_STMT  -> TOKEN_PRINT EXPR EOL
      EXPR       -> EQUALITY
-(LR) EQUALITY   -> COMPARISON == EQUALITY | COMPARISON != EQUALITY | COMPARISON
+(LR) EQUALITY   -> EQUALITY == COMPARISON | EQUALITY != COMPARISON | COMPARISON
 (LR) COMPARISON -> SUM > COMPARISON | SUM >= COMPARISON | SUM < COMPARISON | SUM <= COMPARISON | SUM
 (LR) SUM        -> SUM + TERM | SUM - TERM | TERM
 (LR) TERM       -> TERM * UNARY | TERM / UNARY | TERM % UNARY | UNARY
@@ -20,7 +20,7 @@ Standard
 (RR) POWER      -> PRIMARY ^ UNARY | PRIMARY
      PRIMARY    -> TERMINAL | ( EXPR )
 
-Left-Recursion Fixed
+Left-Recursion Fixed -- this is used by the parser, then converted to the above afterwards to re-introduce left-recursion
 START        -> LINE* EOF
 LINE         -> ASMT | STMT
 ASMT         -> IDENTIFIER = EXPR EOL

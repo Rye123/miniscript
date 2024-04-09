@@ -41,6 +41,12 @@ Context* context_new(Context* parent, Context* global);
 // Adds a new identifier to the context. This adds a COPY of the ExecValue.
 void context_addSymbol(Context* ctx, ExecValue* identifier);
 
+// Defines new ExecValues
+ExecValue* value_newNull();
+ExecValue* value_newString(char* strValue);
+ExecValue* value_newNumber(double numValue);
+ExecValue* value_newIdentifier(char *identifierName);
+
 // Returns the ExecSymbol associated with an identifier, or NULL if there is no such identifier.
 ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier);
 
@@ -55,5 +61,25 @@ void context_setSymbol(Context* ctx, ExecValue* identifier, ExecValue* value);
 
 // Frees the context, including all copied symbols.
 void context_free(Context* ctx);
+
+ExecValue* criticalError(char *msg);
+ExecValue* executionError(char *msg);
+
+
+/* Returns a NEW ExecValue* with the result of these operations. */
+ExecValue* value_opUnaryPos(ExecValue*);
+ExecValue* value_opUnaryNeg(ExecValue*);
+ExecValue* value_opAdd(ExecValue*, ExecValue*);
+ExecValue* value_opSub(ExecValue*, ExecValue*);
+ExecValue* value_opMul(ExecValue*, ExecValue*);
+ExecValue* value_opDiv(ExecValue*, ExecValue*);
+ExecValue* value_opMod(ExecValue*, ExecValue*);
+ExecValue* value_opPow(ExecValue*, ExecValue*);
+ExecValue* value_opEqEq(ExecValue*, ExecValue*);
+ExecValue* value_opNEq(ExecValue*, ExecValue*);
+ExecValue* value_opGt(ExecValue*, ExecValue*);
+ExecValue* value_opGEq(ExecValue*, ExecValue*);
+ExecValue* value_opLt(ExecValue*, ExecValue*);
+ExecValue* value_opLEq(ExecValue*, ExecValue*);
 
 #endif
