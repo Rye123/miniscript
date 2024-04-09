@@ -78,7 +78,6 @@ static const char* SymbolTypeString[] = {
 // Returns 0 if the token is unimplemented, 1 if it's intended to be implemented.
 int isTokenUnimplemented(Token tok);
 
-
 typedef struct _astnode {
     SymbolType type;
     Token *tok;
@@ -98,5 +97,10 @@ void astnode_addChildNode(ASTNode *parent, ASTNode *child);
 
 // Adds a symbol with type `expectedType` as a child of this node.
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType);
+
+void astnode_clearChildren(ASTNode *node);
+
+// Converts from parse tree to AST (i.e. removes *_R nodes)
+ASTNode* astnode_gen(ASTNode *node);
 
 #endif

@@ -34,10 +34,10 @@ void runLine(const char* source, Context *executionContext)
     astnode_print(root);
     printf("\n");
 
-    //printf("\n--- AST RESULT ---\n");
-    //astnode_gen(root);
-    //astnode_print(root);
-    //printf("\n");
+    printf("\n--- AST RESULT ---\n");
+    astnode_gen(root);
+    astnode_print(root);
+    printf("\n");
 
     // Execution
     printf("\n--- EXECUTION RESULT ---\n");
