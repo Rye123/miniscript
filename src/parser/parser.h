@@ -5,6 +5,12 @@
 #include "../lexer/token.h"
 #include "symbol.h"
 
+void parse(ASTNode *root, Token **tokens, size_t tokensCount);
+void parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseAsmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseExprStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parsePrntStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseEquality(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseEqualityR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
