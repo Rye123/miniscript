@@ -162,32 +162,71 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
 	}
     }
 
-    ASTNode *rightChild = curNode->children[2];
-    ASTNode *curOp = curNode->children[1];
+    if (childIndex == -1) {
+	printf("_astnode_left_skew Critical Error: Couldn't find targetType %s in node of type %s.", SymbolTypeString[targetType], SymbolTypeString[node->type]);
+	exit(1);
+    }
+
+    // Invariant: curNode is either a node with ONE child or THREE
+    ASTNode *rightChild = NULL;
+    ASTNode *curOp = NULL;
+    if (curNode->numChildren != 1 && curNode->numChildren != 3) {
+	printf("_astnode_left_skew Critical Error: Given invalid number of children for curNode, curNode: %s, targetType: %s\n", SymbolTypeString[curNode->type], SymbolTypeString[targetType]);
+	exit(1);
+    }
+    if (curNode->numChildren == 3) {
+	rightChild = curNode->children[2];
+	curOp = curNode->children[1];
+    }
     
     while (rightChild != NULL) {
-	// Invariant: curNode is the current node with lchild, op, rchild.
-	// rchild is the same type as curNode.
-	// We want to rotate the tree such that curNode is the lchild of rchild.
-	// Further, we want to shift the operation up to the rchild's node.
 	ASTNode *nextRightChild = NULL;
 	ASTNode *nextOp = NULL;
+
+	// 0. Get rightChild and op for the NEXT iteration, since this operation would modify the children of rightChild
+	// rightChild is either a node of the same type with either ONE child or THREE. If ONE child, then can leave as NULL -- next operation will end
+	if (rightChild->numChildren != 1 && rightChild->numChildren != 3 && rightChild->type != targetType) {
+	    printf("_astnode_left_skew Critical Error: Given invalid number of children for rightChild of curNode, rightChild: %s, curNode: %s, targetType: %s\n",
+		   SymbolTypeString[rightChild->type],
+		   SymbolTypeString[curNode->type],
+		   SymbolTypeString[targetType]
+		);
+	    exit(1);
+	}
+	
         if (rightChild->numChildren == 3) {
 	    nextRightChild = rightChild->children[2];
 	    nextOp = rightChild->children[1];
         }
 
-        // 1. Remove right child and op from curNode (invariant: curNode is size 3)
+	// Invariant: curNode: ..., lChild, op, rChild.
+	//                     rChild is same type as curNode
+	//             rChild: lChildR, opR, rChildR
+	//                               OR
+	//                     childR
+	//     Note: The "..." is the intermediate result of the PREVIOUS operation. At the start, it's empty
+	// We want to rotate the tree, so that curNode becomes the left child of rChild
+	// Further, op should become the SECOND child of rChild (after curNode)
+	// End State:
+	//            curNode: ..., lChild
+	//             rChild: curNode, op, lChildR, opR, rChildR
+	//      Note: Notice that the "..." is curNode, op from this operation.
+	//            In the next operation, rChild effectively becomes:
+	//             rChild: curNode, op, lChildR
+	//            Which is the CORRECT way to evaluate a left-recursive rule.
+
+        // 1. Remove op, rChild from curNode (invariant: curNode is ..., lChild, op, rChild)
 	curNode->numChildren -= 2;
 	curNode->children = realloc(curNode->children, sizeof(ASTNode) * curNode->numChildren);
 
-	// 2. Store right child's current lchild
+	// 2. Store right child's current children
 	size_t rcNumChildren = rightChild->numChildren;
 	ASTNode **rcChildren = malloc(sizeof(ASTNode *) * rcNumChildren);
 	rcChildren = memcpy(rcChildren, rightChild->children, sizeof(ASTNode *) * rcNumChildren);
 
-	// 3. Reorder right child's children such that it is: 
-	//    curNode curOp (current lchild of rChild)
+	// 3. Reorder right child's children such that:
+	//    Original: lChildR, opR, rChildR
+	//         New: curNode, op, lChildR, opR, rChildR
 	rightChild->numChildren = 0;
 	rightChild->children = realloc(rightChild->children, 0);
 	astnode_addChildNode(rightChild, curNode);
@@ -212,7 +251,7 @@ void _astnode_left_skew_rec(ASTNode *node)
     if (node->type == SYM_TERMINAL)
 	return;
     for (size_t i = 0; i < node->numChildren; i++) {
-	//printf("node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i);
+	printf("node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i);
 	_astnode_left_skew_rec(node->children[i]);
     }
     switch (node->type) {
@@ -236,6 +275,7 @@ void _astnode_left_skew_rec(ASTNode *node)
 ASTNode *astnode_gen(ASTNode *node)
 {
     _astnode_remove_rec(node);
+    //astnode_print(node)
 
     // 1. Recursively rebalance tree so that it's left-skewed.
     _astnode_left_skew_rec(node);
