@@ -3,7 +3,7 @@ print -0 // expect: -0
 print -0.001 // expect: -0.001
 print .123 // expect: 0.123
 print 1.23 // expect: 1.23
-print 1.23e+3 // expect: 123000
-print -1.23E+3 // expect: -123000
-print 1.23E-3 // expect: 0.123
-print -1.23e-3 // expect: -0.123
+print 1.23e+3 // expect: 1230
+print -1.23E+3 // expect: -1230
+print 1.23E-3 // expect: 0.00123
+print -1.23e-3 // expect: -0.00123

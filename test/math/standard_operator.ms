@@ -15,7 +15,7 @@ print 8 / 4 / 2      // expect: 1
 // multiplication
 print 5 * 3 // expect: 15
 print 12.34 * 0.3 // expect: 3.702
-print 5 * 5 * 25 // expect: 123
+print 5 * 5 * 25 // expect: 625
 
 // negation
 print -3 // expect: -3

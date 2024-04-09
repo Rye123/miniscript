@@ -1,0 +1,19 @@
+#ifndef LOGGER_H
+#define LOGGER_H
+
+#include <stdio.h>
+#include <stdarg.h>
+
+typedef struct {
+    FILE* out;
+} Logger;
+
+extern Logger resultLogger;
+extern Logger executionLogger;
+extern Logger consoleLogger;
+
+void log_message(Logger *logger, const char *format, ...);
+void init_loggers();
+void cleanup_loggers();
+
+#endif // LOGGER_H
