@@ -163,28 +163,35 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
     }
 
     ASTNode *rightChild = curNode->children[2];
+    ASTNode *curOp = curNode->children[1];
     
     while (rightChild != NULL) {
 	// Invariant: curNode is the current node with lchild, op, rchild.
 	// rchild is the same type as curNode.
 	// We want to rotate the tree such that curNode is the lchild of rchild.
+	// Further, we want to shift the operation up to the rchild's node.
 	ASTNode *nextRightChild = NULL;
-	if (rightChild->numChildren == 3)
+	ASTNode *nextOp = NULL;
+        if (rightChild->numChildren == 3) {
 	    nextRightChild = rightChild->children[2];
+	    nextOp = rightChild->children[1];
+        }
 
-	// 1. Remove right child from curNode (invariant: curNode is size 3)
-	curNode->numChildren--;
+        // 1. Remove right child and op from curNode (invariant: curNode is size 3)
+	curNode->numChildren -= 2;
 	curNode->children = realloc(curNode->children, sizeof(ASTNode) * curNode->numChildren);
 
-	// 2. Store right child's children first
+	// 2. Store right child's current lchild
 	size_t rcNumChildren = rightChild->numChildren;
 	ASTNode **rcChildren = malloc(sizeof(ASTNode *) * rcNumChildren);
 	rcChildren = memcpy(rcChildren, rightChild->children, sizeof(ASTNode *) * rcNumChildren);
 
-	// 3. Reorder right child's children such that curNode is lchild of rchild
+	// 3. Reorder right child's children such that it is: 
+	//    curNode curOp (current lchild of rChild)
 	rightChild->numChildren = 0;
 	rightChild->children = realloc(rightChild->children, 0);
 	astnode_addChildNode(rightChild, curNode);
+	astnode_addChildNode(rightChild, curOp);
 	for (size_t i = 0; i < rcNumChildren; i++)
 	    astnode_addChildNode(rightChild, rcChildren[i]);
 
@@ -193,6 +200,7 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
 
 	// 5. Ensure invariant
 	curNode = rightChild;
+	curOp = nextOp;
 	rightChild = nextRightChild;
 	node->children[childIndex] = curNode;
     }
