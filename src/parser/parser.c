@@ -289,8 +289,7 @@ void parsePrntStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     ASTNode *self = astnode_new(SYM_PRNT_STMT, NULL);
     parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PRINT);
     parseExpr(self, tokens, tokensLen, curIdx);
-    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL); //TODO: ENSURE a program ENDS with NL and then EOF.
-
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
     astnode_addChildNode(parent, self);
 }
 
@@ -299,7 +298,82 @@ void parseExprStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     printParse("parseExprStmt", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_EXPR_STMT, NULL);
     parseExpr(self, tokens, tokensLen, curIdx);
-    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL); //TODO: ENSURE a program ENDS with NL and then EOF.
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+    astnode_addChildNode(parent, self);
+}
+
+void parseElseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx){
+    printParse("parseElseStmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_ELSE, NULL);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_ELSE);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+
+    // Block
+    ASTNode *block = astnode_new(SYM_BLOCK, NULL);
+    astnode_addChildNode(self, block);
+    while (tokens[*curIdx]->type != TOKEN_END){// Still line in the block
+        parseLine(block, tokens, tokensLen, curIdx);
+    }
+    astnode_addChildNode(parent, self);
+}
+
+void parseElseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx){
+    printParse("parseElseIfStmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_ELSEIF, NULL);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_ELSE);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IF);
+    parseExpr(self, tokens, tokensLen, curIdx);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_THEN);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+
+    // Block
+    ASTNode *block = astnode_new(SYM_BLOCK, NULL);
+    astnode_addChildNode(self, block);
+
+    while (tokens[*curIdx]->type != TOKEN_END && tokens[*curIdx]-> type != TOKEN_ELSE){// Still line in the block
+        parseLine(block, tokens, tokensLen, curIdx);
+    }
+    // Either else if or else
+    Token* lookahead = tokens[*curIdx];
+    Token* lookahead2 = tokens[(*curIdx)+1];
+    if (lookahead->type==TOKEN_ELSE){
+        if (lookahead2->type==TOKEN_IF){
+            parseElseIfStmt(self, tokens, tokensLen, curIdx);
+        } else {
+            parseElseStmt(self, tokens, tokensLen, curIdx);
+        }
+    } 
+    astnode_addChildNode(parent, self);
+}
+
+void parseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseIfStmt", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_IFSTMT, NULL);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IF);
+    parseExpr(self, tokens, tokensLen, curIdx);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_THEN);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+
+    // Block
+    ASTNode *block = astnode_new(SYM_BLOCK, NULL);
+    astnode_addChildNode(self, block);
+    while (tokens[*curIdx]->type != TOKEN_END && tokens[*curIdx]-> type != TOKEN_ELSE){// Still line in the block
+        parseLine(block, tokens, tokensLen, curIdx);
+    }
+
+    Token* lookahead = tokens[*curIdx];
+    Token* lookahead2 = tokens[(*curIdx)+1];
+    if (lookahead->type==TOKEN_ELSE){
+        if (lookahead2->type==TOKEN_IF){
+            parseElseIfStmt(self, tokens, tokensLen, curIdx);
+        } else {
+            parseElseStmt(self, tokens, tokensLen, curIdx);
+        }
+    } 
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_END);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IF); //NL parsed on Line level
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
 
     astnode_addChildNode(parent, self);
 }
@@ -309,11 +383,13 @@ void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
     printParse("parseStmt", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_STMT, NULL);
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
-    if (lookahead->type == TOKEN_PRINT) {
-        parsePrntStmt(self, tokens, tokensLen, curIdx);
-    } else {
-        parseExprStmt(self, tokens, tokensLen, curIdx);
-    }
+    if (lookahead->type == TOKEN_PRINT)
+	    parsePrntStmt(self, tokens, tokensLen, curIdx);
+    else if (lookahead->type == TOKEN_IF)
+        parseIfStmt(self, tokens, tokensLen, curIdx);
+    else
+	    parseExprStmt(self, tokens, tokensLen, curIdx);
+    
 
     astnode_addChildNode(parent, self);
 }

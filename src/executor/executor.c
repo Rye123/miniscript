@@ -368,8 +368,6 @@ ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
         return retVal;
     }
     return criticalError("andExpr: Expected 1 or 3 children.");
-    
-    
 }
 
 ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
@@ -425,35 +423,35 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
     if (prntStmt->type != SYM_PRNT_STMT)
         return criticalError("prntStmt: Invalid symbol type, expected SYM_PRNT_STMT");
     if (prntStmt->numChildren == 3 &&
-        prntStmt->children[0]->tok->type == TOKEN_PRINT &&
-        prntStmt->children[1]->type == SYM_EXPR &&
-        prntStmt->children[2]->tok->type == TOKEN_NL) {
-        ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
+	prntStmt->children[0]->tok->type == TOKEN_PRINT &&
+	prntStmt->children[1]->type == SYM_EXPR &&
+	prntStmt->children[2]->tok->type == TOKEN_NL) {
+		ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
 
-        if (exprResult->type == TYPE_IDENTIFIER) {
-            // Get symbol value
-            ExecValue *value = context_getValue(ctx, exprResult);
-            value_free(exprResult);
-            exprResult = value;
-        }
-	
-        switch (exprResult->type) {
-        case TYPE_IDENTIFIER:
-            printf("ERROR: Identifier value was another identifier\n");
-            exit(1);
-            break;
-        case TYPE_STRING:
-            printf("%s\n", exprResult->value.literal_str);
-            break;
-        case TYPE_NUMBER:
-            printf("%f\n", exprResult->value.literal_num);
-            break;
-        case TYPE_NULL:
-            printf("(null)\n");
-            break;
-        }
-        value_free(exprResult);
-        return value_newNull();
+		if (exprResult->type == TYPE_IDENTIFIER) {
+			// Get symbol value
+			ExecValue *value = context_getValue(ctx, exprResult);
+			value_free(exprResult);
+			exprResult = value;
+		}
+		
+		switch (exprResult->type) {
+			case TYPE_IDENTIFIER:
+				printf("ERROR: Identifier value was another identifier\n");
+				exit(1);
+				break;
+				case TYPE_STRING:
+				printf("%s\n", exprResult->value.literal_str);
+				break;
+			case TYPE_NUMBER:
+				printf("%f\n", exprResult->value.literal_num);
+				break;
+			case TYPE_NULL:
+				printf("(null)\n");
+				break;
+			}
+		value_free(exprResult);
+		return value_newNull();
     }
     return criticalError("prntstmt: Invalid print statement.");
 }
@@ -472,15 +470,72 @@ ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
     return criticalError("exprStmt: Invalid exprStmt.");
 }
 
+ExecValue * execBlock(Context* ctx, ASTNode *block){
+	for (int i=0; i<block->numChildren; i++){
+		execLine(ctx, block->children[i]);
+	}
+	return value_newNull();
+}
+
+ExecValue *execElse(Context* ctx, ASTNode *elseStmt){
+	if (elseStmt->numChildren == 3) {
+		return execBlock(ctx, elseStmt->children[2]);
+	} else {
+		return criticalError("Invalid line.");
+	}
+}
+
+ExecValue *execElseIf(Context* ctx, ASTNode *elseIfStmt){
+	int isTrue = 0;
+	if (execExpr(ctx, elseIfStmt->children[2])->type==TYPE_NUMBER){
+		ExecValue *equalityVal = execExpr(ctx, elseIfStmt->children[2]);
+		isTrue = equalityVal->value.literal_num;
+	}
+	if (isTrue==1){
+		return execBlock(ctx, elseIfStmt->children[5]); //Execute block
+	} else {
+		if (elseIfStmt->numChildren==7){
+			if (elseIfStmt->children[6]->type == SYM_ELSEIF){
+				return execElseIf(ctx, elseIfStmt->children[6]);
+			} else if (elseIfStmt->children[6]->type == SYM_ELSE) {
+				return execElse(ctx, elseIfStmt->children[6]);
+			}
+			return criticalError("Invalid branch not else if or else.");
+		}
+		return value_newNull();
+	}
+}
+
+ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
+	int isTrue = 0;
+	if (execExpr(ctx, ifStmt->children[1])->type==TYPE_NUMBER){
+		ExecValue *equalityVal = execExpr(ctx, ifStmt->children[1]);
+		isTrue = equalityVal->value.literal_num;
+	}
+	if (isTrue==1){
+		return execBlock(ctx, ifStmt->children[4]);
+	} else {
+		if (ifStmt->children[5]->type == SYM_ELSEIF){
+			return execElseIf(ctx, ifStmt->children[5]);
+		} else if (ifStmt->children[5]->type == SYM_ELSE) {
+			return execElse(ctx, ifStmt->children[5]);
+		}
+		return value_newNull();
+	}
+}
+
 ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 {
     if (stmt->type != SYM_STMT)
         return criticalError("stmt: Invalid symbol type, expected SYM_STMT");
-    if (stmt->numChildren == 1) {
-        if (stmt->children[0]->type == SYM_EXPR_STMT)
-            return execExprStmt(ctx, stmt->children[0]);
-        if (stmt->children[0]->type == SYM_PRNT_STMT)
-            return execPrntStmt(ctx, stmt->children[0]);
+	if (stmt->numChildren == 1) {
+		if (stmt->children[0]->type == SYM_EXPR_STMT)
+			return execExprStmt(ctx, stmt->children[0]);
+		if (stmt->children[0]->type == SYM_PRNT_STMT)
+			return execPrntStmt(ctx, stmt->children[0]);
+		if (stmt->children[0]->type == SYM_IFSTMT){
+			return execIfStmt(ctx, stmt->children[0]);
+		}
     }
     return criticalError("stmt: Invalid statement.");
 }

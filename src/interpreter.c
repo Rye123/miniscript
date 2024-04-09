@@ -20,9 +20,6 @@ void runLine(const char *source, Context *executionContext)
     Token **tokens = malloc(sizeof(Token *) * 0);
     // 2. Lexing
     lex((const Token ***) &tokens, &tokenCount, source);
-    //tokenCount++;
-    //tokens = realloc(tokens, tokenCount * sizeof(Token *));
-    //tokens[tokenCount-1] = token_new(TOKEN_NL, "\n", 2, tokens[tokenCount-2]->lineNum+1, 0);
 
     log_message(&executionLogger, "--- LEXING RESULT ---\n");
     log_message(&executionLogger, "Token Count: %lu\n", tokenCount);

@@ -51,6 +51,8 @@ bool exactMatch(const char *word, const char *test, const int testLen)
 
 void token_print(Token *token)
 {
+    if (token == NULL)
+        return log_message(&executionLogger, "NULL Token.\n");
     if (token->type == TOKEN_NL)
         log_message(&executionLogger, "Token: { type: %s (%d), lexeme: \"\\n\", line: %d, col: %d }\n", TokenTypeString[token->type], token->type, token->lineNum, token->colNum);
     else
