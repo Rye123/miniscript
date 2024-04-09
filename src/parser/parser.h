@@ -12,6 +12,11 @@ void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
 void parseExprStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parsePrntStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseOrExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseOrExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseAndExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseAndExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+void parseLogUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseEquality(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseEqualityR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseComparison(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);

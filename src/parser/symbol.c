@@ -101,6 +101,8 @@ void _astnode_remove_rec(ASTNode *node)
 	
 	SymbolType childType = children[i]->type;
 	switch (child->type) {
+	case SYM_OR_EXPR_R:
+	case SYM_AND_EXPR_R:
 	case SYM_EQUALITY_R:
 	case SYM_COMPARISON_R:
 	case SYM_SUM_R:
@@ -256,7 +258,15 @@ void _astnode_left_skew_rec(ASTNode *node)
     }
     switch (node->type) {
     case SYM_EXPR:
-	_astnode_left_skew(node, SYM_EQUALITY);
+	_astnode_left_skew(node, SYM_OR_EXPR);
+	break;
+    case SYM_OR_EXPR:
+	_astnode_left_skew(node, SYM_AND_EXPR);
+	break;
+    case SYM_LOG_UNARY:
+	// Children could be "not" LOG_UNARY, or EQUALITY
+	if (node->numChildren == 1)
+	    _astnode_left_skew(node, SYM_EQUALITY);
 	break;
     case SYM_EQUALITY:
 	_astnode_left_skew(node, SYM_COMPARISON);
