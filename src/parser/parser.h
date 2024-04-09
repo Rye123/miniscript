@@ -29,7 +29,7 @@ void parseUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curId
 void parsePower(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 void parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx, TokenType expectedTokenType);
-
+void parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 
 /*
 Performs syntax analysis on `tokens`, storing the AST in `root`.

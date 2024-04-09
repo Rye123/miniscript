@@ -11,6 +11,9 @@ Standard -- this is used by the executor
      STMT       -> EXPR_STMT | PRNT_STMT
      EXPR_STMT  -> EXPR EOL
      PRNT_STMT  -> print EXPR EOL
+     IF_STMT    -> "if" EXPR_STMT "then" BLOCK ELSEIF_STMT "end" "if"
+     ELSEIF_STMT-> "else" "if" EXPR_STMT "then" BLOCK ELSEIF_STMT | "else" "if" EXPR_STMT "then" BLOCK ELSE_STMT
+     ELSE_STMT  -> "else" BLOCK 
      EXPR       -> OR_EXPR
 (LR) OR_EXPR    -> OR_EXPR or AND_EXPR | AND_EXPR
 (LR) AND_EXPR   -> AND_EXPR and LOG_UNARY | LOG_UNARY
@@ -70,6 +73,7 @@ typedef enum {
     SYM_SUM, SYM_SUM_R,
     SYM_TERM, SYM_TERM_R,
     SYM_UNARY, SYM_POWER, SYM_PRIMARY, SYM_TERMINAL,
+    SYM_IFSTMT, SYM_ELSEIF, SYM_ELSE, SYM_BLOCK
 } SymbolType;
 
 static const char* SymbolTypeString[] = {
@@ -85,7 +89,8 @@ static const char* SymbolTypeString[] = {
     "SYM_COMPARISON", "SYM_COMPARISON_R",
     "SYM_SUM", "SYM_SUM_R",
     "SYM_TERM", "SYM_TERM_R",
-    "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY", "SYM_TERMINAL"
+    "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY", "SYM_TERMINAL",
+    "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK"
 };
 
 
