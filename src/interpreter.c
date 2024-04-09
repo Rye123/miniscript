@@ -22,19 +22,11 @@ void runLine(const char* source, Context *executionContext)
     //tokens = realloc(tokens, tokenCount * sizeof(Token *));
     //tokens[tokenCount-1] = token_new(TOKEN_NL, "\n", 2, tokens[tokenCount-2]->lineNum+1, 0);
 
-<<<<<<< HEAD
-    //printf("--- LEXING RESULT ---\n");
-    //printf("Token Count: %lu\n", tokenCount);
-    //for (size_t i = 0; i < tokenCount; i++)
-    //    token_print(tokens[i]);
-    
-=======
     printf("--- LEXING RESULT ---\n");
     printf("Token Count: %lu\n", tokenCount);
     for (size_t i = 0; i < tokenCount; i++){
         token_print(tokens[i]);
     }
->>>>>>> 8d4f072 (feat:ast for if else)
     // 3. Syntactic Analysis
     ASTNode *root = astnode_new(SYM_START, NULL);
     parse(root, tokens, tokenCount);

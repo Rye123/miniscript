@@ -358,12 +358,9 @@ void parseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curI
     ASTNode *block = astnode_new(SYM_BLOCK, NULL);
     astnode_addChildNode(self, block);
     while (tokens[*curIdx]->type != TOKEN_END && tokens[*curIdx]-> type != TOKEN_ELSE){// Still line in the block
-        printf("In Block:");
-        token_print(tokens[*curIdx]);
         parseLine(block, tokens, tokensLen, curIdx);
     }
-    printf("After block if:");
-    token_print(tokens[*curIdx]);
+
     Token* lookahead = tokens[*curIdx];
     Token* lookahead2 = tokens[(*curIdx)+1];
     if (lookahead->type==TOKEN_ELSE){
