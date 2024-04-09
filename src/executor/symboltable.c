@@ -168,6 +168,19 @@ void context_free(Context *ctx)
     free(ctx);
 }
 
+int value_falsiness(ExecValue *e)
+{
+    switch (e->type) {
+    case TYPE_NULL: return 0; // NULL is FALSE
+    case TYPE_NUMBER: return (e->value.literal_num != 0);  // any number other than 0 is TRUE
+    case TYPE_STRING: return (strlen(e->value.literal_str) != 0); // any string other than "" is TRUE
+    case TYPE_IDENTIFIER:
+	printf("value_falsiness: pass the VALUE of the identifier into this function with context_getValue(), instead of the identifier itself.");
+	exit(1);
+    }
+    return -1;
+}
+
 ExecValue* value_opUnaryPos(ExecValue *e)
 {
     if (e == NULL)
@@ -193,6 +206,33 @@ ExecValue* value_opUnaryNeg(ExecValue *e)
 	return criticalError("neg: pass the VALUE of the identifier into this function with context_getValue(), instead of the identifier itself.");
 
     double result = -e->value.literal_num;
+    return value_newNumber(result);
+}
+
+ExecValue* value_opNot(ExecValue *e)
+{
+    if (e == NULL)
+	return criticalError("not: e is null");
+
+    double result = !value_falsiness(e);
+    return value_newNumber(result);
+}
+
+ExecValue* value_opOr(ExecValue *e1, ExecValue *e2)
+{
+    if (e1 == NULL || e2 == NULL)
+	return criticalError("or: e1 or e2 is null");
+
+    double result = value_falsiness(e1) || value_falsiness(e2);
+    return value_newNumber(result);
+}
+
+ExecValue* value_opAnd(ExecValue *e1, ExecValue *e2)
+{
+    if (e1 == NULL || e2 == NULL)
+	return criticalError("and: e1 or e2 is null");
+
+    double result = value_falsiness(e1) && value_falsiness(e2);
     return value_newNumber(result);
 }
 

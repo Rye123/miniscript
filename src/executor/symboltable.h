@@ -71,10 +71,15 @@ void context_free(Context* ctx);
 ExecValue* criticalError(char *msg);
 ExecValue* executionError(char *msg);
 
+// Returns 0 if the value is FALSE, 1 if TRUE.
+int value_falsiness(ExecValue *);
 
 /* Returns a NEW ExecValue* with the result of these operations. */
 ExecValue* value_opUnaryPos(ExecValue*);
 ExecValue* value_opUnaryNeg(ExecValue*);
+ExecValue* value_opNot(ExecValue*);
+ExecValue* value_opAnd(ExecValue*, ExecValue*);
+ExecValue* value_opOr(ExecValue*, ExecValue*);
 ExecValue* value_opAdd(ExecValue*, ExecValue*);
 ExecValue* value_opSub(ExecValue*, ExecValue*);
 ExecValue* value_opMul(ExecValue*, ExecValue*);
