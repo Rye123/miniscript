@@ -264,7 +264,9 @@ void _astnode_left_skew_rec(ASTNode *node)
 	_astnode_left_skew(node, SYM_AND_EXPR);
 	break;
     case SYM_LOG_UNARY:
-	_astnode_left_skew(node, SYM_EQUALITY);
+	// Children could be "not" LOG_UNARY, or EQUALITY
+	if (node->numChildren == 1)
+	    _astnode_left_skew(node, SYM_EQUALITY);
 	break;
     case SYM_EQUALITY:
 	_astnode_left_skew(node, SYM_COMPARISON);

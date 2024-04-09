@@ -299,20 +299,131 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
     }
     return criticalError("equality: Expected 1 or 3 children.");
 }
+ExecValue* execLogUnary(Context* ctx, ASTNode* logUnary)
+{
+    if (logUnary->type != SYM_LOG_UNARY)
+	return criticalError("logUnary: Invalid symbol type, expected SYM_LOG_UNARY");
+
+    // Check if expr is not LOG_UNARY | EQUALITY
+    if (logUnary->numChildren == 1)
+	return execEquality(ctx, logUnary->children[0]);
+    if (logUnary->numChildren == 2) {
+	ExecValue *rVal = execLogUnary(ctx, logUnary->children[1]);
+	ExecValue *retVal;
+	TokenType op = logUnary->children[0]->tok->type;
+	
+	if (rVal->type == TYPE_IDENTIFIER) {
+	    ExecValue *val = context_getValue(ctx, rVal);
+	    if (val == NULL)
+		return executionError("Undeclared identifier.");
+	    value_free(rVal);
+	    rVal = val;
+	}
+
+	if (op == TOKEN_NOT)
+	    retVal = value_opNot(rVal);
+	else
+	    retVal = criticalError("logUnary: Unexpected operator.");
+
+	value_free(rVal);
+	return retVal;
+    }
+
+    return criticalError("logUnary: Expected 1 or 2 children.");
+    
+}
+
+ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
+{
+    if (andExpr->type != SYM_AND_EXPR)
+	return criticalError("andExpr: Invalid symbol type, expected SYM_AND_EXPR");
+
+    // Check if expr is AND_EXPR and LOG_UNARY | LOG_UNARY
+    if (andExpr->numChildren == 1)
+	return execLogUnary(ctx, andExpr->children[0]);
+    if (andExpr->numChildren == 3) {
+	ExecValue *lVal = execAndExpr(ctx, andExpr->children[0]);
+	ExecValue *rVal = execLogUnary(ctx, andExpr->children[2]);
+	ExecValue *retVal;
+
+	if (lVal->type == TYPE_IDENTIFIER) {
+	    ExecValue *val = context_getValue(ctx, lVal);
+	    if (val == NULL)
+		return executionError("Undeclared identifier.");
+	    value_free(lVal);
+	    lVal = val;
+	}
+	
+	if (rVal->type == TYPE_IDENTIFIER) {
+	    ExecValue *val = context_getValue(ctx, rVal);
+	    if (val == NULL)
+		return executionError("Undeclared identifier.");
+	    value_free(rVal);
+	    rVal = val;
+	}
+
+	retVal = value_opAnd(lVal, rVal);
+	value_free(lVal); value_free(rVal);
+
+	return retVal;
+    }
+    return criticalError("andExpr: Expected 1 or 3 children.");
+    
+    
+}
+
+ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
+{
+    if (orExpr->type != SYM_OR_EXPR)
+	return criticalError("orExpr: Invalid symbol type, expected SYM_OR_EXPR");
+
+    // Check if expr is OR_EXPR or AND_EXPR  |  AND_EXPR
+    if (orExpr->numChildren == 1)
+	return execAndExpr(ctx, orExpr->children[0]);
+    if (orExpr->numChildren == 3) {
+	ExecValue *lVal = execOrExpr(ctx, orExpr->children[0]);
+	ExecValue *rVal = execAndExpr(ctx, orExpr->children[2]);
+	ExecValue *retVal;
+
+	if (lVal->type == TYPE_IDENTIFIER) {
+	    ExecValue *val = context_getValue(ctx, lVal);
+	    if (val == NULL)
+		return executionError("Undeclared identifier.");
+	    value_free(lVal);
+	    lVal = val;
+	}
+	
+	if (rVal->type == TYPE_IDENTIFIER) {
+	    ExecValue *val = context_getValue(ctx, rVal);
+	    if (val == NULL)
+		return executionError("Undeclared identifier.");
+	    value_free(rVal);
+	    rVal = val;
+	}
+
+	retVal = value_opOr(lVal, rVal);
+	value_free(lVal); value_free(rVal);
+
+	return retVal;
+    }
+    return criticalError("orExpr: Expected 1 or 3 children.");
+}
 
 ExecValue *execExpr(Context* ctx, ASTNode *expr)
 {
     if (expr->type != SYM_EXPR)
-	return criticalError("Given invalid value for execExpr.");
+	return criticalError("expr: Invalid symbol type, expected SYM_EXPR");
 
     if (expr->numChildren != 1)
-	return criticalError("Number of children of expr not 1.");
+	return criticalError("expr: Expected 1 child.");
 
-    return execEquality(ctx, expr->children[0]);
+    return execOrExpr(ctx, expr->children[0]);
 }
 
 ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 {
+    if (prntStmt->type != SYM_PRNT_STMT)
+	return criticalError("prntStmt: Invalid symbol type, expected SYM_PRNT_STMT");
     if (prntStmt->numChildren == 3 &&
 	prntStmt->children[0]->tok->type == TOKEN_PRINT &&
 	prntStmt->children[1]->type == SYM_EXPR &&
@@ -344,11 +455,13 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 	value_free(exprResult);
 	return value_newNull();
     }
-    return criticalError("Invalid print statement.");
+    return criticalError("prntstmt: Invalid print statement.");
 }
 
 ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 {
+    if (exprStmt->type != SYM_EXPR_STMT)
+	return criticalError("exprStmt: Invalid symbol type, expected SYM_EXPR_STMT");
     if (exprStmt->numChildren == 2 &&
 	exprStmt->children[0]->type == SYM_EXPR &&
 	exprStmt->children[1]->tok->type == TOKEN_NL) {
@@ -356,22 +469,26 @@ ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 	value_free(exprResult);
 	return value_newNull();
     }
-    return criticalError("Invalid expr statement.");
+    return criticalError("exprStmt: Invalid exprStmt.");
 }
 
 ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 {
+    if (stmt->type != SYM_STMT)
+	return criticalError("stmt: Invalid symbol type, expected SYM_STMT");
     if (stmt->numChildren == 1) {
 	if (stmt->children[0]->type == SYM_EXPR_STMT)
 	    return execExprStmt(ctx, stmt->children[0]);
 	if (stmt->children[0]->type == SYM_PRNT_STMT)
 	    return execPrntStmt(ctx, stmt->children[0]);
     }
-    return criticalError("Invalid statement.");
+    return criticalError("stmt: Invalid statement.");
 }
 
 ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 {
+    if (asmt->type != SYM_ASMT)
+	return criticalError("asmt: Invalid symbol type, expected SYM_ASMT");
     if (asmt->numChildren == 4 &&
 	asmt->children[0]->tok->type == TOKEN_IDENTIFIER &&
 	asmt->children[1]->tok->type == TOKEN_EQUAL &&
@@ -396,18 +513,20 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
         value_free(lvalue); value_free(rvalue);
 	return value_newNull();
     }
-    return criticalError("Invalid assignment.");
+    return criticalError("asmt: Invalid assignment.");
 }
 
 ExecValue *execLine(Context* ctx, ASTNode *line)
 {
+    if (line->type != SYM_LINE)
+	return criticalError("line: Invalid symbol type, expected SYM_LINE");
     if (line->numChildren == 1) {
 	if (line->children[0]->type == SYM_ASMT)
 	    return execAsmt(ctx, line->children[0]);
 	if (line->children[0]->type == SYM_STMT)
 	    return execStmt(ctx, line->children[0]);
     }
-    return criticalError("Invalid line.");
+    return criticalError("line: Invalid line.");
 }
 
 ExecValue *execStart(Context* ctx, ASTNode *start)
