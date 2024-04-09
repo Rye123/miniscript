@@ -1,14 +1,14 @@
 // Evaluate the 'else' expression if the condition is false.
 if 1 then
-  print 1
+  print "true"
 else
   print 0
 end if
-// expect: 1
+// expect: true
 
 if 0 then
-print 0
+print "false"
 else
-  print 1
+  print "true"
 end if
-// expect: 1
+// expect: "true"
