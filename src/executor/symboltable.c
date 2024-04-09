@@ -367,8 +367,6 @@ ExecValue* value_opEqEq(ExecValue *e1, ExecValue *e2)
 {
     if (e1 == NULL || e2 == NULL)
 	return criticalError("eq: e1 or e2 is null");
-    if (e1->type == TYPE_NULL || e2->type == TYPE_NULL)
-	return executionError("TypeError: equality expects no null values.");
     // Don't handle identifiers, so that the caller is responsible for managing memory of e1 and e2
     if (e1->type == TYPE_IDENTIFIER || e2->type == TYPE_IDENTIFIER)
 	return criticalError("eq: pass the VALUE of the identifier into this function with context_getValue(), instead of the identifier itself.");
@@ -386,27 +384,25 @@ ExecValue* value_opEqEq(ExecValue *e1, ExecValue *e2)
 	else
 	    result = (strncmp(s1, s2, strlen(s1)) == 0) ? 1 : 0;
 	return value_newNumber(result);
-    } 
-    return executionError("TypeError: equality expects two strings or two numbers.");
+    } else if (e1->type == TYPE_NULL && e2->type == TYPE_NULL) {
+	return value_newNumber(1);
+    }
+    
+    // different types, so not equal
+    return value_newNumber(0);
 }
 
 ExecValue* value_opNEq(ExecValue *e1, ExecValue *e2)
 {
     if (e1 == NULL || e2 == NULL)
 	return criticalError("neq: e1 or e2 is null");
-    if (e1->type == TYPE_NULL || e2->type == TYPE_NULL)
-	return executionError("TypeError: inequality expects no null values.");
     // Don't handle identifiers, so that the caller is responsible for managing memory of e1 and e2
     if (e1->type == TYPE_IDENTIFIER || e2->type == TYPE_IDENTIFIER)
 	return criticalError("neq: pass the VALUE of the identifier into this function with context_getValue(), instead of the identifier itself.");
-
-    if ((e1->type == TYPE_NUMBER && e2->type == TYPE_NUMBER) ||
-	(e1->type == TYPE_STRING && e2->type == TYPE_STRING)) {
-	ExecValue *eqeqRes = value_opEqEq(e1, e2);
-	eqeqRes->value.literal_num = !eqeqRes->value.literal_num;
-	return eqeqRes;
-    }
-    return executionError("TypeError: inequality expects two strings or two numbers.");
+    
+    ExecValue *eqeqRes = value_opEqEq(e1, e2);
+    eqeqRes->value.literal_num = !eqeqRes->value.literal_num;
+    return eqeqRes;
 }
 
 ExecValue* value_opGt(ExecValue *e1, ExecValue *e2)

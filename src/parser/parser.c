@@ -45,6 +45,9 @@ void parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cur
     case TOKEN_IDENTIFIER:
     case TOKEN_STRING:
     case TOKEN_NUMBER:
+    case TOKEN_NULL:
+    case TOKEN_TRUE:
+    case TOKEN_FALSE:
         parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
 	break;
     default:
