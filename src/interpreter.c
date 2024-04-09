@@ -18,6 +18,9 @@ void runLine(const char* source, Context *executionContext)
     Token** tokens = malloc(sizeof(Token *) * 0);
     // 2. Lexing
     lex((const Token***) &tokens, &tokenCount, source);
+    //tokenCount++;
+    //tokens = realloc(tokens, tokenCount * sizeof(Token *));
+    //tokens[tokenCount-1] = token_new(TOKEN_NL, "\n", 2, tokens[tokenCount-2]->lineNum+1, 0);
 
     printf("--- LEXING RESULT ---\n");
     printf("Token Count: %lu\n", tokenCount);
@@ -30,6 +33,11 @@ void runLine(const char* source, Context *executionContext)
     printf("\n--- PARSING RESULT ---\n");
     astnode_print(root);
     printf("\n");
+
+    //printf("\n--- AST RESULT ---\n");
+    //astnode_gen(root);
+    //astnode_print(root);
+    //printf("\n");
 
     // Execution
     printf("\n--- EXECUTION RESULT ---\n");
@@ -71,13 +79,9 @@ void runFile(const char* fname)
     source[totalSz] = '\0';
     fclose(srcFile);
 
-    // Run each line individually
+    // Run the entire file.
     Context *globalCtx = context_new(NULL, NULL);
-    char *line = strtok(source, "\n");
-    while (line != NULL) {
-        runLine(line, globalCtx);
-        line = strtok(NULL, "\n");
-    }
+    runLine(source, globalCtx);
 }
 
 void runREPL()
