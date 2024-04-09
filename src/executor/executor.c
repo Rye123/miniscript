@@ -127,7 +127,7 @@ ExecValue *execUnary(Context* ctx, ASTNode *unary)
 	default:
 	    retVal = criticalError("unary: Unexpected operator.");
 	}
-	free(rVal);
+	value_free(rVal);
 	return retVal;
     }
 
@@ -172,7 +172,7 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
 	default:
 	    retVal = criticalError("term: Unexpected operator.");
 	}
-	free(lVal); free(rVal);
+	value_free(lVal); value_free(rVal);
 	return retVal;
     }
     return criticalError("term: Expected 1 or 3 children.");
@@ -215,7 +215,7 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
 	default:
 	    retVal = criticalError("sum: Unexpected operator.");
 	}
-	free(lVal); free(rVal);
+	value_free(lVal); value_free(rVal);
 	return retVal;
     }
     return criticalError("sum: Expected 1 or 3 children.");
@@ -260,7 +260,7 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 	default:
 	    retVal = criticalError("comparison: Unexpected operator.");
 	}
-	free(lVal); free(rVal);
+	value_free(lVal); value_free(rVal);
 	return retVal;
     }
     return criticalError("comparison: Expected 1 or 3 children.");
@@ -303,7 +303,7 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
 	default:
 	    retVal = criticalError("equality: Unexpected operator.");
 	}
-	free(lVal); free(rVal);
+	value_free(lVal); value_free(rVal);
 	return retVal;
     }
     return criticalError("equality: Expected 1 or 3 children.");
@@ -330,8 +330,9 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 
 	if (exprResult->type == TYPE_IDENTIFIER) {
 	    // Get symbol value
-	    ExecSymbol *sym = context_getSymbol(ctx, exprResult);
-	    exprResult = sym->value;
+	    ExecValue *value = context_getValue(ctx, exprResult);
+	    value_free(exprResult);
+	    exprResult = value;
 	}
 	
 	switch (exprResult->type) {
