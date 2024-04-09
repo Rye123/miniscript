@@ -280,14 +280,24 @@ void parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
 {
     printParse("parseLine", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_LINE, NULL);
-
-    // If lookahead is an IDENTIFIER, we check if the follow-up is an equal sign. If so, then it is an assignment.
+    
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
-    Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
-    if (lookahead->type == TOKEN_IDENTIFIER && lookahead2->type == TOKEN_EQUAL)
-	parseAsmt(self, tokens, tokensLen, curIdx);
-    else
-	parseStmt(self, tokens, tokensLen, curIdx);
+
+    // Check if empty line
+    if (lookahead->type == TOKEN_NL) {
+	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+	// Don't add the node, we just ignore the newline
+	astnode_free(self);
+	return;
+    } else {
+	// (Cheating method, by right should fix the CFG for assignment)
+	// Lookahead TWICE to see if it's an assignment
+	Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
+	if (lookahead->type == TOKEN_IDENTIFIER && lookahead2->type == TOKEN_EQUAL)
+	    parseAsmt(self, tokens, tokensLen, curIdx);
+	else
+	    parseStmt(self, tokens, tokensLen, curIdx);
+    }
     
     astnode_addChildNode(parent, self);
 }

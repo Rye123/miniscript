@@ -332,13 +332,13 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 	    exit(1);
 	    break;
         case TYPE_STRING:
-	    printf("%s", exprResult->value.literal_str);
+	    printf("%s\n", exprResult->value.literal_str);
 	    break;
 	case TYPE_NUMBER:
-	    printf("%f", exprResult->value.literal_num);
+	    printf("%f\n", exprResult->value.literal_num);
 	    break;
 	case TYPE_NULL:
-	    printf("(null)");
+	    printf("(null)\n");
 	    break;
 	}
 	value_free(exprResult);

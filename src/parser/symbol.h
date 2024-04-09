@@ -6,7 +6,7 @@
 /**
 Standard -- this is used by the executor
      START      -> LINE* EOF
-     LINE       -> ASMT  | STMT
+     LINE       -> ASMT  | STMT | EOL      (EOL is for empty line)
      ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
      STMT       -> EXPR_STMT | PRNT_STMT
      EXPR_STMT  -> EXPR EOL
@@ -22,7 +22,7 @@ Standard -- this is used by the executor
 
 Left-Recursion Fixed -- this is used by the parser, then converted to the above afterwards to re-introduce left-recursion
 START        -> LINE* EOF
-LINE         -> ASMT | STMT
+LINE         -> ASMT | STMT | EOL
 ASMT         -> IDENTIFIER = EXPR EOL
 STMT         -> EXPR_STMT | PRNT_STMT
 EXPR_STMT    -> EXPR EOL
