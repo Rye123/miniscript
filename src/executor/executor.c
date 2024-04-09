@@ -393,6 +393,13 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 	ExecSymbol *sym = context_getSymbol(ctx, lvalue);
         if (sym == NULL)
 	    context_addSymbol(ctx, lvalue);
+
+	if (rvalue->type == TYPE_IDENTIFIER) {
+	    // Get symbol value
+	    ExecValue *value = context_getValue(ctx, rvalue);
+	    value_free(rvalue);
+	    rvalue = value;
+	}
         
 	context_setSymbol(ctx, lvalue, rvalue);
         value_free(lvalue); value_free(rvalue);
