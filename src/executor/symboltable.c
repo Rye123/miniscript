@@ -30,7 +30,6 @@ void context_addSymbol(Context *ctx, ExecValue *identifier)
     ctx->symbolCount = ctx->symbolCount + 1;
     ctx->symbols = realloc(ctx->symbols, ctx->symbolCount * sizeof(ExecSymbol*));
     ctx->symbols[ctx->symbolCount-1] = sym;
-    printf("Current count: %lu\n", ctx->symbolCount);
 }
 
 
@@ -159,7 +158,6 @@ void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value)
     // Set the new value
     value_free(sym->value);
     sym->value = newValue;
-    printf("Symbol %s set to %f\n", sym->symbolName, sym->value->value.literal_num);
 }
 
 void context_free(Context *ctx)
