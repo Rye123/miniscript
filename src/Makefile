@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g
 LFLAGS = -lm
-OBJS = interpreter.o executor/executor.o executor/symboltable.o parser/parser.o parser/symbol.o lexer/lexer.o lexer/token.o
+OBJS = interpreter.o executor/executor.o executor/symboltable.o parser/parser.o parser/symbol.o lexer/lexer.o lexer/token.o logger/logger.o
 
 all: main
 
@@ -20,6 +20,9 @@ executor/%.o: executor/%.c
 tests/%.o: tests/%.c
 	$(CC) $(CFLAGS) $^ -c -o $@
 
+logger/%.o: logger/%.c
+	$(CC) $(CFLAGS) $^ -c -o $@
+
 # Linking
 .PHONY: main
 main: main.o $(OBJS)
@@ -33,4 +36,4 @@ test: tests/lex_test.o $(OBJS)
 
 .PHONY: clean
 clean:
-	$(RM) -f *.o executor/*.o lexer/*.o parser/*.o main
+	$(RM) -f *.o executor/*.o lexer/*.o parser/*.o logger/*.o main miniscript

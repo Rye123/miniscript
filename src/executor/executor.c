@@ -1,49 +1,49 @@
 #include <stdio.h>
-#include <math.h>
 #include <string.h>
 #include "../lexer/token.h"
 #include "../parser/symbol.h"
+#include "../logger/logger.h"
 #include "executor.h"
 #include "symboltable.h"
 
 ExecValue *execTerminal(Context* ctx, ASTNode *terminal)
 {
     if (terminal->type != SYM_TERMINAL)
-	return criticalError("terminal: Invalid symbol type, expected SYM_TERMINAL");
+        return criticalError("terminal: Invalid symbol type, expected SYM_TERMINAL");
 
     Token *tok = terminal->tok;
 
     switch (tok->type) {
     case TOKEN_NULL:
-	return value_newNull();
+        return value_newNull();
     case TOKEN_TRUE:
-	return value_newNumber(1.0);
+        return value_newNumber(1.0);
     case TOKEN_FALSE:
-	return value_newNumber(0.0);
+        return value_newNumber(0.0);
     case TOKEN_NUMBER:
-	return value_newNumber(tok->literal.literal_num);
+        return value_newNumber(tok->literal.literal_num);
     case TOKEN_STRING:
-	return value_newString(tok->literal.literal_str);
+        return value_newString(tok->literal.literal_str);
     case TOKEN_IDENTIFIER:
-	return value_newIdentifier(tok->lexeme);
+        return value_newIdentifier(tok->lexeme);
     default:
-	return criticalError("terminal: Invalid token for execTerminal");
+        return criticalError("terminal: Invalid token for execTerminal");
     }
 }
 
 ExecValue *execPrimary(Context* ctx, ASTNode *primary)
 {
     if (primary->type != SYM_PRIMARY)
-	return criticalError("primary: Invalid symbol type, expected SYM_PRIMARY");
+        return criticalError("primary: Invalid symbol type, expected SYM_PRIMARY");
     
     // Check if primary is ( EXPR ) or TERMINAL
     if (primary->numChildren == 1)
-	return execTerminal(ctx, primary->children[0]);
+        return execTerminal(ctx, primary->children[0]);
     if (primary->numChildren == 3) {
-	if (primary->children[0]->tok->type != TOKEN_PAREN_L ||
-	    primary->children[2]->tok->type != TOKEN_PAREN_R)
-	    return criticalError("primary: Expected ( EXPR ), instead given invalid expression with 3 children.");
-	return execExpr(ctx, primary->children[1]);
+        if (primary->children[0]->tok->type != TOKEN_PAREN_L ||
+            primary->children[2]->tok->type != TOKEN_PAREN_R)
+            return criticalError("primary: Expected ( EXPR ), instead given invalid expression with 3 children.");
+        return execExpr(ctx, primary->children[1]);
     }
     
     return criticalError("primary: Expected 1 or 3 children.");
@@ -52,40 +52,40 @@ ExecValue *execPrimary(Context* ctx, ASTNode *primary)
 ExecValue *execPower(Context* ctx, ASTNode *power)
 {
     if (power->type != SYM_POWER)
-	return criticalError("power: Invalid symbol type, expected SYM_POWER");
+        return criticalError("power: Invalid symbol type, expected SYM_POWER");
     
     // Check if power is PRIMARY ^ UNARY or PRIMARY
     if (power->numChildren == 1)
-	return execPrimary(ctx, power->children[0]);
+        return execPrimary(ctx, power->children[0]);
     if (power->numChildren == 3) {
-	ExecValue *lVal = execPrimary(ctx, power->children[0]);
-	ExecValue *rVal = execUnary(ctx, power->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execPrimary(ctx, power->children[0]);
+        ExecValue *rVal = execUnary(ctx, power->children[2]);
+        ExecValue *retVal;
 	
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    // Extract symbol value
-	    ExecValue *newVal = context_getValue(ctx, lVal);
-	    if (newVal == NULL)
-		return criticalError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = newVal;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            // Extract symbol value
+            ExecValue *newVal = context_getValue(ctx, lVal);
+            if (newVal == NULL)
+                return criticalError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = newVal;
+        }
 
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    // Extract symbol value
-	    ExecValue *newVal = context_getValue(ctx, lVal);
-	    if (newVal == NULL)
-		return criticalError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = newVal;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            // Extract symbol value
+            ExecValue *newVal = context_getValue(ctx, lVal);
+            if (newVal == NULL)
+                return criticalError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = newVal;
+        }
 
-	TokenType op = power->children[1]->tok->type;
-	if (op != TOKEN_CARET)
-	    return criticalError("power: Unexpected operator, expected ^.");
-	retVal = value_opPow(lVal, rVal);
-	value_free(lVal); value_free(rVal);
-	return retVal;
+        TokenType op = power->children[1]->tok->type;
+        if (op != TOKEN_CARET)
+            return criticalError("power: Unexpected operator, expected ^.");
+        retVal = value_opPow(lVal, rVal);
+        value_free(lVal); value_free(rVal);
+        return retVal;
     }
 
     return criticalError("power: Expected 1 or 3 children.");
@@ -94,32 +94,32 @@ ExecValue *execPower(Context* ctx, ASTNode *power)
 ExecValue *execUnary(Context* ctx, ASTNode *unary)
 {
     if (unary->type != SYM_UNARY)
-	return criticalError("unary: Invalid symbol type, expected SYM_UNARY");
+        return criticalError("unary: Invalid symbol type, expected SYM_UNARY");
     
     // Check if unary is +/- UNARY or POWER
     if (unary->numChildren == 1)
-	return execPower(ctx, unary->children[0]);
+        return execPower(ctx, unary->children[0]);
     if (unary->numChildren == 2) {
-	ExecValue *rVal = execUnary(ctx, unary->children[1]);
-	ExecValue *retVal;
-	TokenType op = unary->children[0]->tok->type;
+        ExecValue *rVal = execUnary(ctx, unary->children[1]);
+        ExecValue *retVal;
+        TokenType op = unary->children[0]->tok->type;
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	switch (op) {
-	case TOKEN_PLUS:  retVal = value_opUnaryPos(rVal); break;
-	case TOKEN_MINUS: retVal = value_opUnaryNeg(rVal); break;
-	default:
-	    retVal = criticalError("unary: Unexpected operator.");
-	}
-	value_free(rVal);
-	return retVal;
+        switch (op) {
+        case TOKEN_PLUS:  retVal = value_opUnaryPos(rVal); break;
+        case TOKEN_MINUS: retVal = value_opUnaryNeg(rVal); break;
+        default:
+            retVal = criticalError("unary: Unexpected operator.");
+        }
+        value_free(rVal);
+        return retVal;
     }
 
     return criticalError("unary: Expected 1 or 2 children.");
@@ -128,43 +128,43 @@ ExecValue *execUnary(Context* ctx, ASTNode *unary)
 ExecValue *execTerm(Context* ctx, ASTNode *term)
 {
     if (term->type != SYM_TERM)
-	return criticalError("term: Invalid symbol type, expected SYM_TERM.");
+        return criticalError("term: Invalid symbol type, expected SYM_TERM.");
 
     // Check if term is TERM OP UNARY or UNARY
     if (term->numChildren == 1)
-	return execUnary(ctx, term->children[0]);
+        return execUnary(ctx, term->children[0]);
     if (term->numChildren == 3) {
-	ExecValue *lVal = execTerm(ctx, term->children[0]);
-	ExecValue *rVal = execUnary(ctx, term->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execTerm(ctx, term->children[0]);
+        ExecValue *rVal = execUnary(ctx, term->children[2]);
+        ExecValue *retVal;
 
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, lVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = val;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, lVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = val;
+        }
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	TokenType op = term->children[1]->tok->type;
+        TokenType op = term->children[1]->tok->type;
 
-	switch (op) {
-	case TOKEN_STAR:    retVal = value_opMul(lVal, rVal); break;
-	case TOKEN_SLASH:   retVal = value_opDiv(lVal, rVal); break;
-	case TOKEN_PERCENT: retVal = value_opMod(lVal, rVal); break;
-	default:
-	    retVal = criticalError("term: Unexpected operator.");
-	}
-	value_free(lVal); value_free(rVal);
-	return retVal;
+        switch (op) {
+        case TOKEN_STAR:    retVal = value_opMul(lVal, rVal); break;
+        case TOKEN_SLASH:   retVal = value_opDiv(lVal, rVal); break;
+        case TOKEN_PERCENT: retVal = value_opMod(lVal, rVal); break;
+        default:
+            retVal = criticalError("term: Unexpected operator.");
+        }
+        value_free(lVal); value_free(rVal);
+        return retVal;
     }
     return criticalError("term: Expected 1 or 3 children.");
 }
@@ -172,42 +172,42 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
 ExecValue *execSum(Context* ctx, ASTNode *sum)
 {
     if (sum->type != SYM_SUM)
-	return criticalError("sum: Invalid symbol type, expected SYM_SUM.");
+        return criticalError("sum: Invalid symbol type, expected SYM_SUM.");
 
     // Check if sum is SUM OP TERM or SUM
     if (sum->numChildren == 1)
-	return execTerm(ctx, sum->children[0]);
+        return execTerm(ctx, sum->children[0]);
     if (sum->numChildren == 3) {
-	ExecValue *lVal = execSum(ctx, sum->children[0]);
-	ExecValue *rVal = execTerm(ctx, sum->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execSum(ctx, sum->children[0]);
+        ExecValue *rVal = execTerm(ctx, sum->children[2]);
+        ExecValue *retVal;
 
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, lVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = val;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, lVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = val;
+        }
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	TokenType op = sum->children[1]->tok->type;
+        TokenType op = sum->children[1]->tok->type;
 
-	switch (op) {
-	case TOKEN_PLUS:  retVal = value_opAdd(lVal, rVal); break;
-	case TOKEN_MINUS: retVal = value_opSub(lVal, rVal); break;
-	default:
-	    retVal = criticalError("sum: Unexpected operator.");
-	}
-	value_free(lVal); value_free(rVal);
-	return retVal;
+        switch (op) {
+        case TOKEN_PLUS:  retVal = value_opAdd(lVal, rVal); break;
+        case TOKEN_MINUS: retVal = value_opSub(lVal, rVal); break;
+        default:
+            retVal = criticalError("sum: Unexpected operator.");
+        }
+        value_free(lVal); value_free(rVal);
+        return retVal;
     }
     return criticalError("sum: Expected 1 or 3 children.");
 }
@@ -215,44 +215,44 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
 ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 {
     if (comparison->type != SYM_COMPARISON)
-	return criticalError("comparison: Invalid symbol type, expected SYM_COMPARISON.");
+        return criticalError("comparison: Invalid symbol type, expected SYM_COMPARISON.");
 
     // Check if comparison is SUM OP COMPARISON or SUM
     if (comparison->numChildren == 1)
-	return execSum(ctx, comparison->children[0]);
+        return execSum(ctx, comparison->children[0]);
     if (comparison->numChildren == 3) {
-	ExecValue *lVal = execComparison(ctx, comparison->children[0]);
-	ExecValue *rVal = execSum(ctx, comparison->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execComparison(ctx, comparison->children[0]);
+        ExecValue *rVal = execSum(ctx, comparison->children[2]);
+        ExecValue *retVal;
 
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, lVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = val;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, lVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = val;
+        }
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	TokenType op = comparison->children[1]->tok->type;
+        TokenType op = comparison->children[1]->tok->type;
 
-	switch (op) {
-	case TOKEN_GREATER:       retVal = value_opGt(lVal, rVal); break;
-	case TOKEN_GREATER_EQUAL: retVal = value_opGEq(lVal, rVal); break;
-	case TOKEN_LESS:          retVal = value_opLt(lVal, rVal); break;
-	case TOKEN_LESS_EQUAL:    retVal = value_opLEq(lVal, rVal); break;
-	default:
-	    retVal = criticalError("comparison: Unexpected operator.");
-	}
-	value_free(lVal); value_free(rVal);
-	return retVal;
+        switch (op) {
+        case TOKEN_GREATER:       retVal = value_opGt(lVal, rVal); break;
+        case TOKEN_GREATER_EQUAL: retVal = value_opGEq(lVal, rVal); break;
+        case TOKEN_LESS:          retVal = value_opLt(lVal, rVal); break;
+        case TOKEN_LESS_EQUAL:    retVal = value_opLEq(lVal, rVal); break;
+        default:
+            retVal = criticalError("comparison: Unexpected operator.");
+        }
+        value_free(lVal); value_free(rVal);
+        return retVal;
     }
     return criticalError("comparison: Expected 1 or 3 children.");
 }
@@ -260,73 +260,73 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
 ExecValue *execEquality(Context* ctx, ASTNode *equality)
 {
     if (equality->type != SYM_EQUALITY)
-	return criticalError("equality: Invalid symbol type, expected SYM_EQUALITY.");
+        return criticalError("equality: Invalid symbol type, expected SYM_EQUALITY.");
 
     // Check if equality is COMPARISON OP EQUALITY or COMPARISON
     if (equality->numChildren == 1)
-	return execComparison(ctx, equality->children[0]);
+        return execComparison(ctx, equality->children[0]);
     if (equality->numChildren == 3) {
-	ExecValue *lVal = execEquality(ctx, equality->children[0]);
-	ExecValue *rVal = execComparison(ctx, equality->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execEquality(ctx, equality->children[0]);
+        ExecValue *rVal = execComparison(ctx, equality->children[2]);
+        ExecValue *retVal;
 
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, lVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = val;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, lVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = val;
+        }
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	TokenType op = equality->children[1]->tok->type;
+        TokenType op = equality->children[1]->tok->type;
 
-	switch (op) {
-	case TOKEN_EQUAL_EQUAL: retVal = value_opEqEq(lVal, rVal); break;
-	case TOKEN_BANG_EQUAL:  retVal = value_opNEq(lVal, rVal); break;
-	default:
-	    retVal = criticalError("equality: Unexpected operator.");
-	}
-	value_free(lVal); value_free(rVal);
-	return retVal;
+        switch (op) {
+        case TOKEN_EQUAL_EQUAL: retVal = value_opEqEq(lVal, rVal); break;
+        case TOKEN_BANG_EQUAL:  retVal = value_opNEq(lVal, rVal); break;
+        default:
+            retVal = criticalError("equality: Unexpected operator.");
+        }
+        value_free(lVal); value_free(rVal);
+        return retVal;
     }
     return criticalError("equality: Expected 1 or 3 children.");
 }
 ExecValue* execLogUnary(Context* ctx, ASTNode* logUnary)
 {
     if (logUnary->type != SYM_LOG_UNARY)
-	return criticalError("logUnary: Invalid symbol type, expected SYM_LOG_UNARY");
+        return criticalError("logUnary: Invalid symbol type, expected SYM_LOG_UNARY");
 
     // Check if expr is not LOG_UNARY | EQUALITY
     if (logUnary->numChildren == 1)
-	return execEquality(ctx, logUnary->children[0]);
+        return execEquality(ctx, logUnary->children[0]);
     if (logUnary->numChildren == 2) {
-	ExecValue *rVal = execLogUnary(ctx, logUnary->children[1]);
-	ExecValue *retVal;
-	TokenType op = logUnary->children[0]->tok->type;
+        ExecValue *rVal = execLogUnary(ctx, logUnary->children[1]);
+        ExecValue *retVal;
+        TokenType op = logUnary->children[0]->tok->type;
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	if (op == TOKEN_NOT)
-	    retVal = value_opNot(rVal);
-	else
-	    retVal = criticalError("logUnary: Unexpected operator.");
+        if (op == TOKEN_NOT)
+            retVal = value_opNot(rVal);
+        else
+            retVal = criticalError("logUnary: Unexpected operator.");
 
-	value_free(rVal);
-	return retVal;
+        value_free(rVal);
+        return retVal;
     }
 
     return criticalError("logUnary: Expected 1 or 2 children.");
@@ -336,36 +336,36 @@ ExecValue* execLogUnary(Context* ctx, ASTNode* logUnary)
 ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
 {
     if (andExpr->type != SYM_AND_EXPR)
-	return criticalError("andExpr: Invalid symbol type, expected SYM_AND_EXPR");
+        return criticalError("andExpr: Invalid symbol type, expected SYM_AND_EXPR");
 
     // Check if expr is AND_EXPR and LOG_UNARY | LOG_UNARY
     if (andExpr->numChildren == 1)
-	return execLogUnary(ctx, andExpr->children[0]);
+        return execLogUnary(ctx, andExpr->children[0]);
     if (andExpr->numChildren == 3) {
-	ExecValue *lVal = execAndExpr(ctx, andExpr->children[0]);
-	ExecValue *rVal = execLogUnary(ctx, andExpr->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execAndExpr(ctx, andExpr->children[0]);
+        ExecValue *rVal = execLogUnary(ctx, andExpr->children[2]);
+        ExecValue *retVal;
 
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, lVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = val;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, lVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = val;
+        }
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	retVal = value_opAnd(lVal, rVal);
-	value_free(lVal); value_free(rVal);
+        retVal = value_opAnd(lVal, rVal);
+        value_free(lVal); value_free(rVal);
 
-	return retVal;
+        return retVal;
     }
     return criticalError("andExpr: Expected 1 or 3 children.");
     
@@ -375,36 +375,36 @@ ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
 ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
 {
     if (orExpr->type != SYM_OR_EXPR)
-	return criticalError("orExpr: Invalid symbol type, expected SYM_OR_EXPR");
+        return criticalError("orExpr: Invalid symbol type, expected SYM_OR_EXPR");
 
     // Check if expr is OR_EXPR or AND_EXPR  |  AND_EXPR
     if (orExpr->numChildren == 1)
-	return execAndExpr(ctx, orExpr->children[0]);
+        return execAndExpr(ctx, orExpr->children[0]);
     if (orExpr->numChildren == 3) {
-	ExecValue *lVal = execOrExpr(ctx, orExpr->children[0]);
-	ExecValue *rVal = execAndExpr(ctx, orExpr->children[2]);
-	ExecValue *retVal;
+        ExecValue *lVal = execOrExpr(ctx, orExpr->children[0]);
+        ExecValue *rVal = execAndExpr(ctx, orExpr->children[2]);
+        ExecValue *retVal;
 
-	if (lVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, lVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(lVal);
-	    lVal = val;
-	}
+        if (lVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, lVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(lVal);
+            lVal = val;
+        }
 	
-	if (rVal->type == TYPE_IDENTIFIER) {
-	    ExecValue *val = context_getValue(ctx, rVal);
-	    if (val == NULL)
-		return executionError("Undeclared identifier.");
-	    value_free(rVal);
-	    rVal = val;
-	}
+        if (rVal->type == TYPE_IDENTIFIER) {
+            ExecValue *val = context_getValue(ctx, rVal);
+            if (val == NULL)
+                return executionError("Undeclared identifier.");
+            value_free(rVal);
+            rVal = val;
+        }
 
-	retVal = value_opOr(lVal, rVal);
-	value_free(lVal); value_free(rVal);
+        retVal = value_opOr(lVal, rVal);
+        value_free(lVal); value_free(rVal);
 
-	return retVal;
+        return retVal;
     }
     return criticalError("orExpr: Expected 1 or 3 children.");
 }
@@ -412,10 +412,10 @@ ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
 ExecValue *execExpr(Context* ctx, ASTNode *expr)
 {
     if (expr->type != SYM_EXPR)
-	return criticalError("expr: Invalid symbol type, expected SYM_EXPR");
+        return criticalError("expr: Invalid symbol type, expected SYM_EXPR");
 
     if (expr->numChildren != 1)
-	return criticalError("expr: Expected 1 child.");
+        return criticalError("expr: Expected 1 child.");
 
     return execOrExpr(ctx, expr->children[0]);
 }
@@ -423,37 +423,37 @@ ExecValue *execExpr(Context* ctx, ASTNode *expr)
 ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 {
     if (prntStmt->type != SYM_PRNT_STMT)
-	return criticalError("prntStmt: Invalid symbol type, expected SYM_PRNT_STMT");
+        return criticalError("prntStmt: Invalid symbol type, expected SYM_PRNT_STMT");
     if (prntStmt->numChildren == 3 &&
-	prntStmt->children[0]->tok->type == TOKEN_PRINT &&
-	prntStmt->children[1]->type == SYM_EXPR &&
-	prntStmt->children[2]->tok->type == TOKEN_NL) {
-	ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
+        prntStmt->children[0]->tok->type == TOKEN_PRINT &&
+        prntStmt->children[1]->type == SYM_EXPR &&
+        prntStmt->children[2]->tok->type == TOKEN_NL) {
+        ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
 
-	if (exprResult->type == TYPE_IDENTIFIER) {
-	    // Get symbol value
-	    ExecValue *value = context_getValue(ctx, exprResult);
-	    value_free(exprResult);
-	    exprResult = value;
-	}
+        if (exprResult->type == TYPE_IDENTIFIER) {
+            // Get symbol value
+            ExecValue *value = context_getValue(ctx, exprResult);
+            value_free(exprResult);
+            exprResult = value;
+        }
 	
-	switch (exprResult->type) {
-	case TYPE_IDENTIFIER:
-	    printf("ERROR: Identifier value was another identifier\n");
-	    exit(1);
-	    break;
+        switch (exprResult->type) {
+        case TYPE_IDENTIFIER:
+            printf("ERROR: Identifier value was another identifier\n");
+            exit(1);
+            break;
         case TYPE_STRING:
-	    printf("%s\n", exprResult->value.literal_str);
-	    break;
-	case TYPE_NUMBER:
-	    printf("%f\n", exprResult->value.literal_num);
-	    break;
-	case TYPE_NULL:
-	    printf("(null)\n");
-	    break;
-	}
-	value_free(exprResult);
-	return value_newNull();
+            printf("%s\n", exprResult->value.literal_str);
+            break;
+        case TYPE_NUMBER:
+            printf("%f\n", exprResult->value.literal_num);
+            break;
+        case TYPE_NULL:
+            printf("(null)\n");
+            break;
+        }
+        value_free(exprResult);
+        return value_newNull();
     }
     return criticalError("prntstmt: Invalid print statement.");
 }
@@ -461,13 +461,13 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 {
     if (exprStmt->type != SYM_EXPR_STMT)
-	return criticalError("exprStmt: Invalid symbol type, expected SYM_EXPR_STMT");
+        return criticalError("exprStmt: Invalid symbol type, expected SYM_EXPR_STMT");
     if (exprStmt->numChildren == 2 &&
-	exprStmt->children[0]->type == SYM_EXPR &&
-	exprStmt->children[1]->tok->type == TOKEN_NL) {
-	ExecValue *exprResult = execExpr(ctx, exprStmt->children[0]);
-	value_free(exprResult);
-	return value_newNull();
+        exprStmt->children[0]->type == SYM_EXPR &&
+        exprStmt->children[1]->tok->type == TOKEN_NL) {
+        ExecValue *exprResult = execExpr(ctx, exprStmt->children[0]);
+        value_free(exprResult);
+        return value_newNull();
     }
     return criticalError("exprStmt: Invalid exprStmt.");
 }
@@ -475,12 +475,12 @@ ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 {
     if (stmt->type != SYM_STMT)
-	return criticalError("stmt: Invalid symbol type, expected SYM_STMT");
+        return criticalError("stmt: Invalid symbol type, expected SYM_STMT");
     if (stmt->numChildren == 1) {
-	if (stmt->children[0]->type == SYM_EXPR_STMT)
-	    return execExprStmt(ctx, stmt->children[0]);
-	if (stmt->children[0]->type == SYM_PRNT_STMT)
-	    return execPrntStmt(ctx, stmt->children[0]);
+        if (stmt->children[0]->type == SYM_EXPR_STMT)
+            return execExprStmt(ctx, stmt->children[0]);
+        if (stmt->children[0]->type == SYM_PRNT_STMT)
+            return execPrntStmt(ctx, stmt->children[0]);
     }
     return criticalError("stmt: Invalid statement.");
 }
@@ -488,30 +488,29 @@ ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 {
     if (asmt->type != SYM_ASMT)
-	return criticalError("asmt: Invalid symbol type, expected SYM_ASMT");
+        return criticalError("asmt: Invalid symbol type, expected SYM_ASMT");
     if (asmt->numChildren == 4 &&
-	asmt->children[0]->tok->type == TOKEN_IDENTIFIER &&
-	asmt->children[1]->tok->type == TOKEN_EQUAL &&
-	asmt->children[2]->type == SYM_EXPR &&
-	asmt->children[3]->tok->type == TOKEN_NL) {
-	ExecValue *lvalue = execTerminal(ctx, asmt->children[0]);
-	ExecValue *rvalue = execExpr(ctx, asmt->children[2]);
-	// TODO: implement symbol table assignment
-	// There's no explicit declaration in Miniscript, so we check the symbol table -- if it isn't there, we declare it
-	ExecSymbol *sym = context_getSymbol(ctx, lvalue);
+        asmt->children[0]->tok->type == TOKEN_IDENTIFIER &&
+        asmt->children[1]->tok->type == TOKEN_EQUAL &&
+        asmt->children[2]->type == SYM_EXPR &&
+        asmt->children[3]->tok->type == TOKEN_NL) {
+        ExecValue *lvalue = execTerminal(ctx, asmt->children[0]);
+        ExecValue *rvalue = execExpr(ctx, asmt->children[2]);
+        // There's no explicit declaration in Miniscript, so we check the symbol table -- if it isn't there, we declare it
+        ExecSymbol *sym = context_getSymbol(ctx, lvalue);
         if (sym == NULL)
-	    context_addSymbol(ctx, lvalue);
+            context_addSymbol(ctx, lvalue);
 
-	if (rvalue->type == TYPE_IDENTIFIER) {
-	    // Get symbol value
-	    ExecValue *value = context_getValue(ctx, rvalue);
-	    value_free(rvalue);
-	    rvalue = value;
-	}
+        if (rvalue->type == TYPE_IDENTIFIER) {
+            // Get symbol value
+            ExecValue *value = context_getValue(ctx, rvalue);
+            value_free(rvalue);
+            rvalue = value;
+        }
         
-	context_setSymbol(ctx, lvalue, rvalue);
+        context_setSymbol(ctx, lvalue, rvalue);
         value_free(lvalue); value_free(rvalue);
-	return value_newNull();
+        return value_newNull();
     }
     return criticalError("asmt: Invalid assignment.");
 }
@@ -519,12 +518,12 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 ExecValue *execLine(Context* ctx, ASTNode *line)
 {
     if (line->type != SYM_LINE)
-	return criticalError("line: Invalid symbol type, expected SYM_LINE");
+        return criticalError("line: Invalid symbol type, expected SYM_LINE");
     if (line->numChildren == 1) {
-	if (line->children[0]->type == SYM_ASMT)
-	    return execAsmt(ctx, line->children[0]);
-	if (line->children[0]->type == SYM_STMT)
-	    return execStmt(ctx, line->children[0]);
+        if (line->children[0]->type == SYM_ASMT)
+            return execAsmt(ctx, line->children[0]);
+        if (line->children[0]->type == SYM_STMT)
+            return execStmt(ctx, line->children[0]);
     }
     return criticalError("line: Invalid line.");
 }
@@ -535,16 +534,16 @@ ExecValue *execStart(Context* ctx, ASTNode *start)
     //TODO: all runtime errors here
     int exitCode = 0;
     for (size_t i = 0; i < start->numChildren; i++) {
-	ASTNode *child = start->children[i];
-	ExecValue *result;
-	if (child->type == SYM_LINE)
-	    result = execLine(ctx, child);
-	else if (child->tok->type == TOKEN_EOF)
-	    break;
-	else
-	    return criticalError("Unexpected symbol.");
+        ASTNode *child = start->children[i];
+        ExecValue *result;
+        if (child->type == SYM_LINE)
+            result = execLine(ctx, child);
+        else if (child->tok->type == TOKEN_EOF)
+            break;
+        else
+            return criticalError("Unexpected symbol.");
 
-	value_free(result);
+        value_free(result);
     }
 
     return value_newNumber(exitCode);

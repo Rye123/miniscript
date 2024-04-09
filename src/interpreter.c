@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include "logger/logger.h"
 #include "lexer/token.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
@@ -9,46 +10,47 @@
 #include "executor/symboltable.h"
 #define LINE_MAX 255
 
-void runLine(const char* source, Context *executionContext)
+void runLine(const char *source, Context *executionContext)
 {
-    printf("ENTERED: %s\n", source);
+    log_message(&executionLogger, "Input: %s\n", source);
+
     // Lexical Analysis
     // 1. Initialisation
     size_t tokenCount = 0;
-    Token** tokens = malloc(sizeof(Token *) * 0);
+    Token **tokens = malloc(sizeof(Token *) * 0);
     // 2. Lexing
-    lex((const Token***) &tokens, &tokenCount, source);
+    lex((const Token ***) &tokens, &tokenCount, source);
     //tokenCount++;
     //tokens = realloc(tokens, tokenCount * sizeof(Token *));
     //tokens[tokenCount-1] = token_new(TOKEN_NL, "\n", 2, tokens[tokenCount-2]->lineNum+1, 0);
 
-    //printf("--- LEXING RESULT ---\n");
-    //printf("Token Count: %lu\n", tokenCount);
-    //for (size_t i = 0; i < tokenCount; i++)
-    //    token_print(tokens[i]);
+    log_message(&executionLogger, "--- LEXING RESULT ---\n");
+    log_message(&executionLogger, "Token Count: %lu\n", tokenCount);
+    for (size_t i = 0; i < tokenCount; i++)
+        token_print(tokens[i]);
     
     // 3. Syntactic Analysis
     ASTNode *root = astnode_new(SYM_START, NULL);
     parse(root, tokens, tokenCount);
-    printf("\n--- PARSE TREE ---\n");
+    log_message(&executionLogger, "\n--- PARSE TREE ---\n");
     astnode_print(root);
-    printf("\n");
+    log_message(&executionLogger, "\n");
 
-    printf("\n--- AST ---\n");
+    log_message(&executionLogger, "\n--- AST ---\n");
     astnode_gen(root);
     astnode_print(root);
-    printf("\n");
+    log_message(&executionLogger, "\n");
 
     // Execution
-    printf("\n--- EXECUTION RESULT ---\n");
+    log_message(&executionLogger, "\n--- EXECUTION RESULT ---\n");
     ExecValue *val = execStart(executionContext, root);
-    //printf("\nExit Code: %f\n", val->value.literal_num);
+    log_message(&executionLogger, "\nExit Code: %f\n", val->value.literal_num);
     value_free(val);
 
     // Cleanup
     /* astnode_free(root); */
     for (size_t i = 0; i < tokenCount; i++)
-	token_free(tokens[i]);
+        token_free(tokens[i]);
     free(tokens);
 }
 
@@ -88,13 +90,13 @@ void runREPL()
 {
     char buffer[LINE_MAX];
     Context *globalCtx = context_new(NULL, NULL);
-    printf("Miniscript 0.1\n");
+    log_message(&consoleLogger, "Miniscript 0.1\n");
     while (1) {
-        printf(">> ");
+        log_message(&consoleLogger, ">> ");
         if (fgets(buffer, LINE_MAX, stdin) == NULL)
             break;
+
         runLine(buffer, globalCtx);
+        log_message(&executionLogger, "\n\n");
     }
 }
-
-

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../logger/logger.h"
 #include "token.h"
 #include "lexer.h"
 #define MAX_ERRMSG_LEN 255
@@ -8,7 +9,7 @@
 void lexError(const char *source, const char *errStr, int lineNum, int colNum)
 {
     //TODO: shift this into an error struct
-    printf("\033[91mLexing Error: %s (Line %d, Column %d)\033[0m\n", errStr, lineNum, colNum);
+    log_message(&executionLogger, "\033[91mLexing Error: %s (Line %d, Column %d)\033[0m\n", errStr, lineNum, colNum);
     // Print the appropriate line
     int curLine = 0; size_t targetLineLen = 0;
     char c; int i = 0;
@@ -30,8 +31,8 @@ void lexError(const char *source, const char *errStr, int lineNum, int colNum)
 
     // Duplicate the line
     char *line = strndup((source + i - targetLineLen - 1), targetLineLen);
-    printf("\033[91m%s\033[0m\n", line);
-    printf("\033[91m%*c^\033[0m\n\n", colNum, ' ');
+    log_message(&executionLogger, "\033[91m%s\033[0m\n", line);
+    log_message(&executionLogger, "\033[91m%*c^\033[0m\n\n", colNum, ' ');
     free(line);
 }
 
@@ -346,13 +347,13 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
         case '{':
             tokType = TOKEN_BRACE_L;
             lexEnd++; colNum++;
-          break;
+            break;
         case '}':
             tokType = TOKEN_BRACE_R;
             lexEnd++; colNum++;
-          break;
+            break;
         case '\n':
-	    tokType = TOKEN_NL;
+            tokType = TOKEN_NL;
             lineNum++; colNum++;
             lexEnd++;
             break;
@@ -388,11 +389,11 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
             // INVARIANT: lexeme string is source[lexStart:lexEnd], where lexEnd is the start of the next lexeme.
             size_t lexemeLen = lexEnd - lexStart;
 
-	    // Add Token to list
-	    *tokenCount = *tokenCount + 1;
+            // Add Token to list
+            *tokenCount = *tokenCount + 1;
 
-	    *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
-	    (*tokensPtr)[*(tokenCount) - 1] = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
+            *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
+            (*tokensPtr)[*(tokenCount) - 1] = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
         }
 
         lexStart = lexEnd;

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define _DEBUG_PARSER_ 0
+#include "../logger/logger.h"
 #include "symbol.h"
 #include "parser.h"
 
@@ -9,14 +10,14 @@
 Token *getToken(Token **tokens, size_t tokensLen, size_t idx)
 {
     if (idx >= tokensLen)
-	return *(tokens + tokensLen - 1);
+        return *(tokens + tokensLen - 1);
     return *(tokens + idx);
 }
 
 void printParse(char* str, Token **tokens, size_t *curIdx)
 {
     if (_DEBUG_PARSER_)
-	printf("%s: Token at index %lu, type %s, lexeme \"%s\"\n", str, *curIdx, TokenTypeString[tokens[*curIdx]->type], tokens[*curIdx]->lexeme);
+        log_message(&executionLogger, "%s: Token at index %lu, type %s, lexeme \"%s\"\n", str, *curIdx, TokenTypeString[tokens[*curIdx]->type], tokens[*curIdx]->lexeme);
 }
 
 void parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx, TokenType expectedTokenType)
@@ -24,7 +25,7 @@ void parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     printParse("parseTerminal", tokens, curIdx);
     Token *tok = getToken(tokens, tokensLen, *curIdx);
     if (expectedTokenType != tok->type) {
-	printf("SYNTAX ERROR: Unexpected token type %s, expected %s.\n", TokenTypeString[tok->type], TokenTypeString[expectedTokenType]);
+        log_message(&executionLogger, "SYNTAX ERROR: Unexpected token type %s, expected %s.\n", TokenTypeString[tok->type], TokenTypeString[expectedTokenType]);
     }
     astnode_addChild(parent, SYM_TERMINAL, tok);
     *curIdx = *curIdx + 1;
@@ -38,10 +39,10 @@ void parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cur
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     switch (lookahead->type) {
     case TOKEN_PAREN_L:
-	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_L);
-	parseExpr(self, tokens, tokensLen, curIdx);
-	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_R);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_L);
+        parseExpr(self, tokens, tokensLen, curIdx);
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_R);
+        break;
     case TOKEN_IDENTIFIER:
     case TOKEN_STRING:
     case TOKEN_NUMBER:
@@ -49,9 +50,9 @@ void parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cur
     case TOKEN_TRUE:
     case TOKEN_FALSE:
         parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	break;
+        break;
     default:
-	printf("SYNTAX ERROR: Unexpected token type %s for parsePrimary.\n", TokenTypeString[lookahead->type]);
+        log_message(&executionLogger, "SYNTAX ERROR: Unexpected token type %s for parsePrimary.\n", TokenTypeString[lookahead->type]);
     }
 
     astnode_addChildNode(parent, self);
@@ -68,11 +69,11 @@ void parsePower(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curId
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     switch (lookahead->type) {
     case TOKEN_CARET:
-	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_CARET);
-	parseUnary(self, tokens, tokensLen, curIdx);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_CARET);
+        parseUnary(self, tokens, tokensLen, curIdx);
+        break;
     default:
-	break;
+        break;
     }
     
     astnode_addChildNode(parent, self);
@@ -86,12 +87,12 @@ void parseUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curId
     switch (lookahead->type) {
     case TOKEN_PLUS:
     case TOKEN_MINUS:
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseUnary(self, tokens, tokensLen, curIdx);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseUnary(self, tokens, tokensLen, curIdx);
+        break;
     default:
-	parsePower(self, tokens, tokensLen, curIdx);
-	break;
+        parsePower(self, tokens, tokensLen, curIdx);
+        break;
     }
 
     astnode_addChildNode(parent, self);
@@ -106,12 +107,12 @@ void parseTermR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curId
     case TOKEN_STAR:
     case TOKEN_SLASH:
     case TOKEN_PERCENT:
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseTerm(self, tokens, tokensLen, curIdx);
-	parseTermR(self, tokens, tokensLen, curIdx);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseTerm(self, tokens, tokensLen, curIdx);
+        parseTermR(self, tokens, tokensLen, curIdx);
+        break;
     default:
-	break;
+        break;
     }
     
     astnode_addChildNode(parent, self);
@@ -136,12 +137,12 @@ void parseSumR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
     switch (lookahead->type) {
     case TOKEN_PLUS:
     case TOKEN_MINUS:
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseSum(self, tokens, tokensLen, curIdx);
-	parseSumR(self, tokens, tokensLen, curIdx);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseSum(self, tokens, tokensLen, curIdx);
+        parseSumR(self, tokens, tokensLen, curIdx);
+        break;
     default:
-	break;
+        break;
     }
     
     astnode_addChildNode(parent, self);
@@ -167,12 +168,12 @@ void parseComparisonR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t 
     case TOKEN_GREATER_EQUAL:
     case TOKEN_LESS:
     case TOKEN_LESS_EQUAL:
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseComparison(self, tokens, tokensLen, curIdx);
-	parseComparisonR(self, tokens, tokensLen, curIdx);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseComparison(self, tokens, tokensLen, curIdx);
+        parseComparisonR(self, tokens, tokensLen, curIdx);
+        break;
     default:
-	break;
+        break;
     }
     
     astnode_addChildNode(parent, self);
@@ -196,12 +197,12 @@ void parseEqualityR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
     switch (lookahead->type) {
     case TOKEN_EQUAL_EQUAL:
     case TOKEN_BANG_EQUAL:
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseEquality(self, tokens, tokensLen, curIdx);
-	parseEqualityR(self, tokens, tokensLen, curIdx);
-	break;
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseEquality(self, tokens, tokensLen, curIdx);
+        parseEqualityR(self, tokens, tokensLen, curIdx);
+        break;
     default:
-	break;
+        break;
     }
     astnode_addChildNode(parent, self);
 }
@@ -222,10 +223,10 @@ void parseLogUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     ASTNode *self = astnode_new(SYM_LOG_UNARY, NULL);
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     if (lookahead->type == TOKEN_NOT) {
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseLogUnary(self, tokens, tokensLen, curIdx);
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseLogUnary(self, tokens, tokensLen, curIdx);
     } else {
-	parseEquality(self, tokens, tokensLen, curIdx);
+        parseEquality(self, tokens, tokensLen, curIdx);
     }
     astnode_addChildNode(parent, self);
 }
@@ -236,9 +237,9 @@ void parseAndExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     ASTNode *self = astnode_new(SYM_AND_EXPR_R, NULL);
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     if (lookahead->type == TOKEN_AND) {
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseAndExpr(self, tokens, tokensLen, curIdx);
-	parseAndExprR(self, tokens, tokensLen, curIdx);
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseAndExpr(self, tokens, tokensLen, curIdx);
+        parseAndExprR(self, tokens, tokensLen, curIdx);
     }
     astnode_addChildNode(parent, self);
 }
@@ -258,9 +259,9 @@ void parseOrExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cur
     ASTNode *self = astnode_new(SYM_OR_EXPR_R, NULL);
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     if (lookahead->type == TOKEN_OR) {
-	parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
-	parseOrExpr(self, tokens, tokensLen, curIdx);
-	parseOrExprR(self, tokens, tokensLen, curIdx);
+        parseTerminal(self, tokens, tokensLen, curIdx, lookahead->type);
+        parseOrExpr(self, tokens, tokensLen, curIdx);
+        parseOrExprR(self, tokens, tokensLen, curIdx);
     }
     astnode_addChildNode(parent, self);
 }
@@ -309,9 +310,9 @@ void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
     ASTNode *self = astnode_new(SYM_STMT, NULL);
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     if (lookahead->type == TOKEN_PRINT) {
-	parsePrntStmt(self, tokens, tokensLen, curIdx);
+        parsePrntStmt(self, tokens, tokensLen, curIdx);
     } else {
-	parseExprStmt(self, tokens, tokensLen, curIdx);
+        parseExprStmt(self, tokens, tokensLen, curIdx);
     }
 
     astnode_addChildNode(parent, self);
@@ -324,8 +325,8 @@ void parseAsmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
     if (lookahead->type != TOKEN_IDENTIFIER || lookahead2->type != TOKEN_EQUAL) {
-	printf("Invalid assignment parsing.\n");
-	exit(1);
+        log_message(&executionLogger, "parseAsmt: Invalid assignment parsing.\n");
+        exit(1);
     }
     
     parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IDENTIFIER);
@@ -345,18 +346,18 @@ void parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
 
     // Check if empty line
     if (lookahead->type == TOKEN_NL) {
-	parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
-	// Don't add the node, we just ignore the newline
-	astnode_free(self);
-	return;
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+        // Don't add the node, we just ignore the newline
+        astnode_free(self);
+        return;
     } else {
-	// (Cheating method, by right should fix the CFG for assignment)
-	// Lookahead TWICE to see if it's an assignment
-	Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
-	if (lookahead->type == TOKEN_IDENTIFIER && lookahead2->type == TOKEN_EQUAL)
-	    parseAsmt(self, tokens, tokensLen, curIdx);
-	else
-	    parseStmt(self, tokens, tokensLen, curIdx);
+        // (Cheating method, by right should fix the CFG for assignment)
+        // Lookahead TWICE to see if it's an assignment
+        Token *lookahead2 = getToken(tokens, tokensLen, (*curIdx) + 1);
+        if (lookahead->type == TOKEN_IDENTIFIER && lookahead2->type == TOKEN_EQUAL)
+            parseAsmt(self, tokens, tokensLen, curIdx);
+        else
+            parseStmt(self, tokens, tokensLen, curIdx);
     }
     
     astnode_addChildNode(parent, self);
@@ -372,10 +373,10 @@ void parse(ASTNode *root, Token **tokens, size_t tokenCount)
     size_t curIdx = 0;
     Token *lookahead;
     while (1) {
-	lookahead = getToken(tokens, tokensLen, curIdx);
-	if (lookahead->type == TOKEN_EOF)
-	    break;
-	parseLine(root, tokens, tokensLen, &curIdx);
+        lookahead = getToken(tokens, tokensLen, curIdx);
+        if (lookahead->type == TOKEN_EOF)
+            break;
+        parseLine(root, tokens, tokensLen, &curIdx);
     }
     return;
 }
