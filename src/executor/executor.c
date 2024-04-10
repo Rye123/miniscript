@@ -457,7 +457,7 @@ ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 }
 
 ExecValue * execBlock(Context* ctx, ASTNode *block){
-	for (int i=0; i<block->numChildren; i++){
+	for (int i = 0; i < block->numChildren; i++){
 		ExecValue *result = execLine(ctx, block->children[i]);
         if (result->type == TYPE_ERROR)
             return result;
@@ -475,7 +475,7 @@ ExecValue *execElse(Context* ctx, ASTNode *elseStmt){
 	else
 		criticalError("execElse: Invalid line.");
 
-    return NULL;
+    return value_newNull();
 }
 
 ExecValue *execElseIf(Context* ctx, ASTNode *elseIfStmt){
@@ -497,8 +497,8 @@ ExecValue *execElseIf(Context* ctx, ASTNode *elseIfStmt){
 
             criticalError("execElseIf: Invalid branch -- not else if, or else");
         }
-        return value_newNull();
     }
+    return value_newNull();
 }
 
 ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
@@ -510,14 +510,16 @@ ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
     if (expr->type == TYPE_ERROR)
         return expr;
     if (value_falsiness(expr) == 1) { // true branch
+        value_free(expr);
         return execBlock(ctx, ifStmt->children[4]);
     } else {
+        value_free(expr);
         if (ifStmt->children[5]->type == SYM_ELSEIF)
             return execElseIf(ctx, ifStmt->children[5]);
         else if (ifStmt->children[5]->type == SYM_ELSE)
             return execElse(ctx, ifStmt->children[5]);
-        return value_newNull();
     }
+    return value_newNull();
 }
 
 ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
@@ -528,17 +530,27 @@ ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
     if (expr->type == TYPE_ERROR)
         return expr;
     while (value_falsiness(expr) == 1){
-        execBlock(ctx, whileStmt->children[3]);
+        ExecValue *blockErr = execBlock(ctx, whileStmt->children[3]);
+        if (blockErr->type == TYPE_ERROR) {
+            value_free(expr);
+            return blockErr;
+        }
+        value_free(expr);
         expr = execExpr(ctx, whileStmt->children[1]);
         expr = unpackValue(ctx, expr);
-        if (expr->type == TYPE_ERROR)
+        if (expr->type == TYPE_ERROR) {
+            value_free(blockErr);
             return expr;
+        }
         if (ctx->hasBreakOrContinue == 1){
             ctx->hasBreakOrContinue = 0;
             break;
         } else if (ctx->hasBreakOrContinue == 2)
             ctx->hasBreakOrContinue = 0;
+
+        value_free(blockErr);
     }
+    value_free(expr);
     return value_newNull();
 }
 

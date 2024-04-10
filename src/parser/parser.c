@@ -616,6 +616,7 @@ Error *parseWhile(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *cu
             return lineErr;
         lookahead = getToken(tokens, tokensLen, *curIdx);
     }
+    astnode_addChildNode(self, block);
 
     err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_END);
     if (err)
@@ -626,7 +627,6 @@ Error *parseWhile(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *cu
     err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
     if (err)
         return err;
-    astnode_addChildNode(self, block);
     astnode_addChildNode(parent, self);
     return NULL;
 }
