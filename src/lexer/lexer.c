@@ -167,18 +167,24 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr,
             size_t startCol = colNum;
 
             // Iterate until end of string
+            // We want lexStart to be at the first ", and lexEnd to be AFTER the next ".
+            lexEnd++; colNum++;
             for (size_t i = lexStart + 1; *(source + i) != '"'; i++) {
-                if (*(source + i) == '\n' || *(source + i) == '\0') {
-                    tokType = TOKEN_UNKNOWN;
-                    lexError("Unterminated string", lineNum, colNum, errorsPtr, errorCount);
-                    lexEnd++; colNum++;
+                if (*(source + i) == '\n' || *(source + i) == '\0')
                     break;
-                }
                 lexEnd++; colNum++;
             }
 
-            // INVARIANT: lexEnd now points to the character just before the end of string
-            lexEnd += 2; colNum += 2; // make lexEnd point to the character AFTER the end quotes.
+            // INVARIANT: lexEnd either points to the next ", or
+            //            lexEnd points to \n or EOF.
+            if (*(source + lexEnd) == '\n' || *(source + lexEnd) == '\0') {
+                tokType = TOKEN_UNKNOWN;
+                lexError("Unterminated string", lineNum, colNum, errorsPtr, errorCount);
+                lexEnd = srcLen;
+            } else {
+                // make lexEnd point to the character AFTER the end quotes.
+                lexEnd += 1; colNum += 1; 
+            }
             break;
         }
         case '+':
