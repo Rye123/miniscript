@@ -508,9 +508,23 @@ ExecValue* value_opGt(ExecValue *e1, ExecValue *e2)
         double result = e1->value.literal_num > e2->value.literal_num;
         return value_newNumber(result, e1->tok);
     } else if (e1->type == TYPE_STRING && e2->type == TYPE_STRING) {
-        char *s1 = e1->value.literal_str;
+        // e1 is gt if it "collates after" e2 i.e. if the first non-matching char in e1 is greater than e2 in ASCII
+        // We compare them by strcmp with the smaller size, and if it's still a match, the string with the larger size is greater
+        char *s1 = e1->value.literal_str; 
         char *s2 = e2->value.literal_str;
-        return value_newNumber(strlen(s1) > strlen(s2), e1->tok);
+        size_t s1Len = strlen(s1);
+        size_t s2Len = strlen(s2);
+        size_t smallerLen = (s1Len < s2Len) ? s1Len : s2Len;
+
+        int comparison = strncmp(s1, s2, smallerLen);
+        if (comparison != 0) {
+            double value = (comparison > 0) ? 1 : 0;
+            return value_newNumber(value, e1->tok);
+        }
+        
+        if (s1Len > s2Len)
+            return value_newNumber(1, e1->tok);
+        return value_newNumber(0, e1->tok);
     }
 
     // Invalid types
@@ -533,9 +547,12 @@ ExecValue* value_opGEq(ExecValue *e1, ExecValue *e2)
         double result = e1->value.literal_num >= e2->value.literal_num;
         return value_newNumber(result, e1->tok);
     } else if (e1->type == TYPE_STRING && e2->type == TYPE_STRING) {
-        char *s1 = e1->value.literal_str;
-        char *s2 = e2->value.literal_str;
-        return value_newNumber(strlen(s1) >= strlen(s2), e1->tok);
+        ExecValue *gt = value_opGt(e1, e2);
+        if (gt->value.literal_num == 0) {
+            value_free(gt);
+            return value_opEqEq(e1, e2);
+        }
+        return gt;
     }
 
     // Invalid types
@@ -558,9 +575,10 @@ ExecValue* value_opLt(ExecValue *e1, ExecValue *e2)
         double result = e1->value.literal_num < e2->value.literal_num;
         return value_newNumber(result, e1->tok);
     } else if (e1->type == TYPE_STRING && e2->type == TYPE_STRING) {
-        char *s1 = e1->value.literal_str;
-        char *s2 = e2->value.literal_str;
-        return value_newNumber(strlen(s1) < strlen(s2), e1->tok);
+        // < is the complement of >=
+        ExecValue *geq = value_opGEq(e1, e2);
+        geq->value.literal_num = (geq->value.literal_num == 0) ? 1 : 0;
+        return geq;
     }
 
     // Invalid types
@@ -583,9 +601,10 @@ ExecValue* value_opLEq(ExecValue *e1, ExecValue *e2)
         double result = e1->value.literal_num <= e2->value.literal_num;
         return value_newNumber(result, e1->tok);
     } else if (e1->type == TYPE_STRING && e2->type == TYPE_STRING) {
-        char *s1 = e1->value.literal_str;
-        char *s2 = e2->value.literal_str;
-        return value_newNumber(strlen(s1) <= strlen(s2), e1->tok);
+        // <= is the complement of >
+        ExecValue *gt = value_opGt(e1, e2);
+        gt->value.literal_num = (gt->value.literal_num == 0) ? 1 : 0;
+        return gt;
     }
 
     // Invalid types
