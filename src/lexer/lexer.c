@@ -399,9 +399,18 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
         free(errMsg);
     }
 
-    // Add EOL token and then EOF
-    *tokenCount = *tokenCount + 2;
-    *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
-    (*tokensPtr)[*(tokenCount) - 2] = token_new(TOKEN_NL, "\n", 1, lineNum, colNum);
+    // Add NL token, if it doesn't already end with one
+    if ((*tokensPtr)[*(tokenCount) - 1]->type != TOKEN_NL) {
+        *tokenCount += 2;
+        *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
+        lineNum += 1; colNum = 0;
+        (*tokensPtr)[*(tokenCount) - 2] = token_new(TOKEN_NL, "\n", 1, lineNum, colNum);
+        lineNum += 1; colNum = 0;
+    } else {
+        *tokenCount += 1;
+        *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
+    }
+
+    // Add EOF token
     (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum+1, 0);
 }
