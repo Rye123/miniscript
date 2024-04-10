@@ -22,6 +22,7 @@ typedef struct {
         char* identifier_name;
         Error* error_ptr;
     } value;
+    Token* tok; // Used to add context for the ExecValue
 } ExecValue;
 
 // A unique identifier in the current scope, not to be confused with the Symbol from parsing.
@@ -45,10 +46,10 @@ void context_addSymbol(Context* ctx, ExecValue* identifier);
 
 // Defines new ExecValues
 ExecValue* value_newNull();
-ExecValue* value_newString(char* strValue);
-ExecValue* value_newNumber(double numValue);
-ExecValue* value_newIdentifier(char *identifierName);
-ExecValue* value_newError(Error *err);
+ExecValue* value_newString(char* strValue, Token* tokPtr);
+ExecValue* value_newNumber(double numValue, Token* tokPtr);
+ExecValue* value_newIdentifier(char *identifierName, Token* tokPtr);
+ExecValue* value_newError(Error *err, Token* tokPtr);
 
 // Clones an ExecValue
 ExecValue* value_clone(ExecValue *val);
@@ -75,7 +76,7 @@ void context_free(Context* ctx);
 // Returns 0 if the value is FALSE, 1 if TRUE.
 int value_falsiness(ExecValue *);
 
-/* Returns a NEW ExecValue* with the result of these operations. */
+/* Returns a NEW ExecValue* with the result of these operations.*/
 ExecValue* value_opUnaryPos(ExecValue*);
 ExecValue* value_opUnaryNeg(ExecValue*);
 ExecValue* value_opNot(ExecValue*);

@@ -18,7 +18,7 @@ ExecValue *unpackValue(Context *ctx, ExecValue *val)
             Error *nameErr = error_new(ERR_RUNTIME_NAME, -1, -1);
             snprintf(nameErr->message, MAX_ERRMSG_LEN, "Undeclared identifier \"%s\"", val->value.identifier_name);
             value_free(val);
-            return value_newError(nameErr);
+            return value_newError(nameErr, val->tok);
         }
         value_free(val);
         val = newVal;
@@ -37,15 +37,15 @@ ExecValue *execTerminal(Context* ctx, ASTNode *terminal)
     case TOKEN_NULL:
         return value_newNull();
     case TOKEN_TRUE:
-        return value_newNumber(1.0);
+        return value_newNumber(1.0, tok);
     case TOKEN_FALSE:
-        return value_newNumber(0.0);
+        return value_newNumber(0.0, tok);
     case TOKEN_NUMBER:
-        return value_newNumber(tok->literal.literal_num);
+        return value_newNumber(tok->literal.literal_num, tok);
     case TOKEN_STRING:
-        return value_newString(tok->literal.literal_str);
+        return value_newString(tok->literal.literal_str, tok);
     case TOKEN_IDENTIFIER:
-        return value_newIdentifier(tok->lexeme);
+        return value_newIdentifier(tok->lexeme, tok);
     default:
         criticalError("terminal: Invalid token for execTerminal");
     }
@@ -636,5 +636,5 @@ ExecValue *execStart(Context* ctx, ASTNode *start)
         value_free(result);
     }
 
-    return value_newNumber(exitCode);
+    return value_newNull();
 }
