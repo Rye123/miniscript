@@ -3,7 +3,7 @@
 #include "../logger/logger.h"
 #include "error.h"
 
-ErrorContext *errorContext = {NULL};
+ErrorContext *errorContext = NULL;
 
 void criticalError(const char *msg)
 {
@@ -24,6 +24,8 @@ void initErrorContext(const char *source)
 void _checkErrorContext()
 {
     if (errorContext != NULL)
+        return;
+    if (errorContext->source != NULL)
         return;
     criticalError("Error context not initialised.");
 }
@@ -71,33 +73,38 @@ void error_string(Error *error, char *dest, size_t destLen)
     i++;
     
     // 3.1. Identify the correct line
-    int curLine = 0; size_t targetLineLen = 0;
-    char c; size_t j = 0;
-    do {
+    const char *source = error->ctx->source;
+    size_t sourceLen = strlen(source);
+    size_t tgtIdxStart = 0; size_t tgtIdxEnd = 0;
+    size_t curLine = 0;
+    for (size_t j = 0; j < sourceLen; j++) {
+        char c = *(source + j);
         if (curLine == error->lineNum) {
-            int start_j = j;
-            do {
-                c = *(error->ctx->source + j);
-                targetLineLen = j - start_j;
-                j++;
-            } while (c != '\n' && c != '\0');
+            // At the desired line.
+            // Need to identify the size of the line
+            tgtIdxStart = j; tgtIdxEnd = j;
+            for (size_t k = j; k < sourceLen; k++) {
+                c = *(source + k);
+                if (c == '\n' || c == '\0')
+                    break;
+                tgtIdxEnd++;
+            }
             break;
         }
-        c = *(error->ctx->source + j);
+
         if (c == '\n')
             curLine++;
-        j++;
-    } while (c != '\0');
-    
-    // 3.2. Copy line in
-    if (targetLineLen > MAX_ERRCTX_LEN) {
+    }
+
+    // 3.2. Copy the entire line in
+    size_t tgtLineSz = tgtIdxEnd - tgtIdxStart;
+    if (tgtLineSz > MAX_ERRCTX_LEN) {
         // Don't bother printing, too long
         dest[i-1] = '\0';
         return;
     }
-        
-    strncpy(dest + i, (error->ctx->source + j - targetLineLen - 1), targetLineLen);
-    i += targetLineLen;
+    strncpy(dest + i, source + tgtIdxStart, tgtLineSz);
+    i += tgtLineSz;
     
     // 3.3. Add the caret
     dest[i] = '\n';
@@ -113,5 +120,6 @@ void error_string(Error *error, char *dest, size_t destLen)
 
 void error_free(Error *err)
 {
-    free(err);
+    if (err)
+        free(err);
 }
