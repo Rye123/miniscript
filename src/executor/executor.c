@@ -437,6 +437,17 @@ ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
     }
 }
 
+ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
+    if (whileStmt->type != SYM_WHILE)
+        return criticalError("ifstmt: Invalid symbol type, expected SYM_WHILE");
+    ExecValue *expr = execExpr(ctx, whileStmt->children[1]);
+    while (value_falsiness(unpackValue(ctx, expr)) == 1){
+        execBlock(ctx, whileStmt->children[3]);
+        expr = execExpr(ctx, whileStmt->children[1]);
+    }
+    return value_newNull();
+}
+
 ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 {
     if (stmt->type != SYM_STMT)
@@ -448,6 +459,9 @@ ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 			return execPrntStmt(ctx, stmt->children[0]);
 		if (stmt->children[0]->type == SYM_IFSTMT){
 			return execIfStmt(ctx, stmt->children[0]);
+		}
+		if (stmt->children[0]->type == SYM_WHILE){
+			return execWhileStmt(ctx, stmt->children[0]);
 		}
     }
     return criticalError("stmt: Invalid statement.");
