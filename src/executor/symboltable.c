@@ -13,6 +13,7 @@ Context *context_new(Context *parent, Context *global)
     ctx->parent = parent;
     ctx->symbols = malloc(0);
     ctx->symbolCount = 0;
+    ctx->hasBreakOrContinue = 0;
     return ctx;
 }
 
