@@ -21,3 +21,12 @@ print 5 * 5 * 25 // expect: 625
 print -3 // expect: -3
 print --(3) // expect: 3
 print ---(3) // expect: -3
+
+// power
+print 3^5 // expect: 243
+print -2^3 // expect: -8
+
+// mod
+print 5 % 3 // expect: 2
+print 16 % 4 // expect: 0
+print 25 % 7 // expect:4
