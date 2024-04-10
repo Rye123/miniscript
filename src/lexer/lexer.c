@@ -293,6 +293,12 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr,
             if (lookahead2 == '=') {
                 tokType = TOKEN_BANG_EQUAL;
                 lexEnd += 2; colNum += 2;
+            } else {
+                // Unknown
+                tokType = TOKEN_UNKNOWN;
+                sprintf(errMsg, "Unexpected character %c", lookahead);
+                lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
+                lexEnd++; colNum++;
             }
             break;
         case '>':
