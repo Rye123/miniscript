@@ -418,6 +418,8 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
             return exprResult;
 
         exprResult = unpackValue(ctx, exprResult);
+        if (exprResult->type == TYPE_ERROR)
+            return exprResult;
 		
 		switch (exprResult->type) {
         case TYPE_IDENTIFIER:

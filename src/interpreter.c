@@ -60,7 +60,11 @@ void runLine(const char *source, Context *executionContext)
     // Execution
     log_message(&executionLogger, "\n--- EXECUTION RESULT ---\n");
     ExecValue *val = execStart(executionContext, root);
-    log_message(&executionLogger, "\nExit Code: %f\n", val->value.literal_num);
+    if (val->type == TYPE_ERROR) {
+        char errStr[MAX_ERRSTR_LEN];
+        error_string(val->value.error_ptr, errStr, MAX_ERRSTR_LEN);
+        log_message(&consoleLogger, "%s\n", errStr);
+    }
     value_free(val);
 
     // Cleanup
