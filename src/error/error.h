@@ -22,6 +22,7 @@ void initErrorContext(const char* source);
 typedef enum {
     ERR_TOKEN,
     ERR_SYNTAX,
+    ERR_SYNTAX_EOF,
     ERR_RUNTIME,
     ERR_RUNTIME_TYPE,
     ERR_RUNTIME_NAME,
@@ -30,6 +31,7 @@ typedef enum {
 static const char *ErrorTypeString[] = {
     "Tokenisation Error",
     "Syntax Error",
+    "Unexpected EOF Error",
     "Runtime Error",
     "Type Error",
     "Name Error"
