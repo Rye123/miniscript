@@ -8,12 +8,13 @@ Standard -- this is used by the executor
      START      -> LINE* EOF
      LINE       -> ASMT  | STMT | EOL      (EOL is for empty line)
      ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
-     STMT       -> EXPR_STMT | PRNT_STMT | IF_STMT | WHILE_STMT | BREAK | CONTINUE
+     STMT       -> EXPR_STMT | PRNT_STMT | IF_STMT | WHILE_STMT | BREAK | CONTINUE | RETURN
      EXPR_STMT  -> EXPR EOL | EOL
      PRNT_STMT  -> print EXPR EOL | print EOL
      WHILE_STMT -> while EXPR EOL BLOCK end while EOL
      BREAK      -> break EOL
      CONTINUE   -> continue EOL
+     RETURN     -> return EXPR EOL | return EOL
      IF_STMT    -> if EXPR then EOL BLOCK ELSEIF_STMT end if EOL |
                    if EXPR then EOL BLOCK ELSE_STMT   end if EOL |
                    if EXPR then EOL BLOCK             end if EOL
@@ -42,12 +43,13 @@ Left-Recursion Fixed -- this is used by the parser, then converted to the above 
 START        -> LINE* EOF
 LINE         -> ASMT | STMT | EOL
 ASMT         -> IDENTIFIER = EXPR EOL
-STMT         -> EXPR_STMT | PRNT_STMT | IF_STMT | WHILE_STMT | BREAK | CONTINUE
+STMT         -> EXPR_STMT | PRNT_STMT | IF_STMT | WHILE_STMT | BREAK | CONTINUE | RETURN
 EXPR_STMT    -> EXPR EOL | EOL
 PRNT_STMT    -> TOKEN_PRINT EXPR EOL | EOL
 WHILE_STMT   -> while EXPR EOL BLOCK end while EOL
 BREAK        -> break EOL
 CONTINUE     -> continue EOL
+RETURN     -> return EXPR EOL | return EOL
 IF_STMT      -> if EXPR then EOL BLOCK ELSEIF_STMT end if EOL |
                 if EXPR then EOL BLOCK ELSE_STMT   end if EOL |
                 if EXPR then EOL BLOCK             end if EOL

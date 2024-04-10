@@ -458,6 +458,35 @@ Error* parseArgList(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
     return NULL;
 }
 
+Error *parseReturn(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseReturn", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_CONTINUE, NULL);
+    Error *err = NULL;
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_RETURN);
+    if (err) {
+        astnode_free(self);
+        return err;
+    }
+
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type != TOKEN_NL) {
+        err = parseExpr(self, tokens, tokensLen, curIdx);
+        if (err) {
+            astnode_free(self);
+            return err;
+        }
+    }
+    
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+    if (err) {
+        astnode_free(self);
+        return err;
+    }
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
 Error* parseFnExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseFnExpr", tokens, curIdx);
@@ -833,6 +862,8 @@ Error *parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curI
         err = parseBreak(self, tokens, tokensLen, curIdx);
     else if (lookahead->type == TOKEN_CONTINUE)
         err = parseContinue(self, tokens, tokensLen, curIdx);
+    else if (lookahead->type == TOKEN_RETURN)
+        err = parseReturn(self, tokens, tokensLen, curIdx);
     else
 	    err = parseExprStmt(self, tokens, tokensLen, curIdx);
 
