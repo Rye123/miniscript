@@ -17,8 +17,9 @@ ExecValue *unpackValue(Context *ctx, ExecValue *val)
         if (newVal == NULL) {
             Error *nameErr = error_new(ERR_RUNTIME_NAME, -1, -1);
             snprintf(nameErr->message, MAX_ERRMSG_LEN, "Undeclared identifier \"%s\"", val->value.identifier_name);
+            ExecValue *errVal = value_newError(nameErr, val->tok);
             value_free(val);
-            return value_newError(nameErr, val->tok);
+            return errVal;
         }
         value_free(val);
         val = newVal;
