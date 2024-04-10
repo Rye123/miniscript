@@ -21,22 +21,28 @@ void printParse(char* str, Token **tokens, size_t *curIdx)
         log_message(&executionLogger, "%s: Token at index %lu, type %s, lexeme \"%s\"\n", str, *curIdx, TokenTypeString[tokens[*curIdx]->type], tokens[*curIdx]->lexeme);
 }
 
+Error *getParseError(ErrorType type, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    // We use the PREVIOUS token if this one is a newline
+    size_t idx = *curIdx;
+    Token *tok = getToken(tokens, tokensLen, idx);
+    while (tok->type == TOKEN_NL || tok->type == TOKEN_EOF) {
+        idx--;
+        if (idx < 0)
+            break;
+        tok = getToken(tokens, tokensLen, idx);
+    }
+    Error *err = error_new(type, tok->lineNum, tok->colNum);
+    return err;
+}
+
 Error *parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx, TokenType expectedTokenType)
 {
     printParse("parseTerminal", tokens, curIdx);
     Token *tok = getToken(tokens, tokensLen, *curIdx);
 
     if (expectedTokenType != tok->type) {
-        // We use the PREVIOUS token if this one is a newline
-        size_t idx = *curIdx - 1;
-        while (tok->type == TOKEN_NL || tok->type == TOKEN_EOF) {
-            tok = getToken(tokens, tokensLen, idx);
-            idx--;
-            if (idx <= 0)
-                break;
-        }
-            
-        Error *err = error_new(ERR_SYNTAX, tok->lineNum, tok->colNum);
+        Error *err = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
         snprintf(err->message, MAX_ERRMSG_LEN, "Expected token %s, instead got %s.", TokenTypeString[expectedTokenType], TokenTypeString[tok->type]);
         return err;
     }
@@ -61,8 +67,7 @@ Error *parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
             return exprError;
         }
         if (hasEOFError) {
-            Token *previous = getToken(tokens, tokensLen, *curIdx - 1);
-            Error *eofError = error_new(ERR_SYNTAX_EOF, previous->lineNum, previous->colNum);      
+            Error *eofError = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);     
             snprintf(eofError->message, MAX_ERRMSG_LEN, "Expected a closing parentheses.");
             error_free(hasEOFError);
             return eofError;
@@ -81,7 +86,7 @@ Error *parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
         break;
     }
     default: {
-        Error *err = error_new(ERR_SYNTAX, lookahead->lineNum, lookahead->colNum);
+        Error *err = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
         snprintf(err->message, MAX_ERRMSG_LEN, "Expecting either a terminal or a starting parentheses, instead got token %s.", TokenTypeString[lookahead->type]);
         return err;
     }
@@ -463,8 +468,7 @@ Error *parseElseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *
     while (lookahead->type != TOKEN_END) {
         // Still line in the block
         if (lookahead->type == TOKEN_EOF) {
-            Token *previous = getToken(tokens, tokensLen, *curIdx - 2);
-            Error *eofError = error_new(ERR_SYNTAX_EOF, previous->lineNum, previous->colNum);
+            Error *eofError = getParseError(ERR_SYNTAX_EOF, tokens, tokensLen, curIdx);
             snprintf(eofError->message, MAX_ERRMSG_LEN, "Else block not terminated with \"end if\"."); //TODO: might confuse with nested if
             astnode_free(self);
             astnode_free(block);
@@ -502,8 +506,7 @@ Error *parseElseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t
     while (lookahead->type != TOKEN_END && lookahead->type != TOKEN_ELSE) {
         // Still line in the block
         if (lookahead->type == TOKEN_EOF) {
-            Token *previous = getToken(tokens, tokensLen, *curIdx - 2);
-            Error *eofError = error_new(ERR_SYNTAX_EOF, previous->lineNum, previous->colNum);
+            Error *eofError = getParseError(ERR_SYNTAX_EOF, tokens, tokensLen, curIdx);
             snprintf(eofError->message, MAX_ERRMSG_LEN, "Else If block not terminated with \"end if\" or \"else\"."); //TODO: might confuse with nested if
             astnode_free(self);
             astnode_free(block);
@@ -556,8 +559,7 @@ Error *parseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     while (lookahead->type != TOKEN_END && lookahead->type != TOKEN_ELSE) {
         // Still line in the block
         if (lookahead->type == TOKEN_EOF) {
-            Token *previous = getToken(tokens, tokensLen, *curIdx - 2);
-            Error *eofError = error_new(ERR_SYNTAX_EOF, previous->lineNum, previous->colNum);
+            Error *eofError = getParseError(ERR_SYNTAX_EOF, tokens, tokensLen, curIdx);
             snprintf(eofError->message, MAX_ERRMSG_LEN, "If block not terminated with \"end if\" or \"else\"."); //TODO: might confuse with nested if
             astnode_free(self);
             astnode_free(block);
@@ -618,8 +620,7 @@ Error *parseWhile(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *cu
     while (lookahead->type != TOKEN_END) {
         // Still line in the block
         if (lookahead->type == TOKEN_EOF) {
-            Token *previous = getToken(tokens, tokensLen, *curIdx - 2);
-            Error *eofError = error_new(ERR_SYNTAX_EOF, previous->lineNum, previous->colNum);
+            Error *eofError = getParseError(ERR_SYNTAX_EOF, tokens, tokensLen, curIdx);
             snprintf(eofError->message, MAX_ERRMSG_LEN, "While loop not terminated with \"end while\"."); //TODO: end while or end? might confuse with nested if
             astnode_free(self);
             astnode_free(block);
