@@ -34,6 +34,10 @@ void astnode_print(ASTNode *node)
     if (node->type == SYM_TERMINAL) {
         if (node->tok->type == TOKEN_NL)
             log_message(&executionLogger, "%s(%s('\\n'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
+        else if(node->tok->type == TOKEN_PAREN_L)
+            log_message(&executionLogger, "%s( )", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
+        else if(node->tok->type == TOKEN_PAREN_R)
+            log_message(&executionLogger, "%s( )", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
         else
             log_message(&executionLogger, "%s(%s('%s'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type], node->tok->lexeme);
         return;
