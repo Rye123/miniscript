@@ -263,7 +263,9 @@ void _astnode_left_skew_rec(ASTNode *node)
     }
     switch (node->type) {
     case SYM_EXPR:
-        _astnode_left_skew(node, SYM_OR_EXPR);
+        // Children could be OR_EXPR, or FN_EXPR
+        if (node->children[0]->type == SYM_OR_EXPR)
+            _astnode_left_skew(node, SYM_OR_EXPR);
         break;
     case SYM_OR_EXPR:
         _astnode_left_skew(node, SYM_AND_EXPR);

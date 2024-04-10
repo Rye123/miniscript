@@ -22,7 +22,10 @@ Standard -- this is used by the executor
                    else if EXPR then EOL BLOCK
      ELSE_STMT  -> else EOL BLOCK 
      BLOCK      -> LINE*
-     EXPR       -> OR_EXPR | empty
+     EXPR       -> OR_EXPR | FN_EXPR | empty
+     FN_EXPR    -> function ( ARG_LIST ) EOL BLOCK end function
+     ARG_LIST   -> ARG,*
+     ARG        -> IDENTIFIER | IDENTIFIER = STRING | IDENTIFIER = NUMBER | IDENTIFIER = NULL
 (LR) OR_EXPR    -> OR_EXPR or AND_EXPR | AND_EXPR
 (LR) AND_EXPR   -> AND_EXPR and LOG_UNARY | LOG_UNARY
 (RR) LOG_UNARY  -> not LOG_UNARY | EQUALITY
@@ -33,6 +36,7 @@ Standard -- this is used by the executor
 (RR) UNARY      -> +UNARY | -UNARY | POWER
 (RR) POWER      -> PRIMARY ^ UNARY | PRIMARY
      PRIMARY    -> TERMINAL | ( EXPR )
+     TERMINAL   -> IDENTIFIER | STRING | NUMBER | NULL
 
 Left-Recursion Fixed -- this is used by the parser, then converted to the above afterwards to re-introduce left-recursion
 START        -> LINE* EOF
@@ -50,8 +54,11 @@ IF_STMT      -> if EXPR then EOL BLOCK ELSEIF_STMT end if EOL |
 ELSEIF_STMT  -> else if EXPR then EOL BLOCK ELSEIF_STMT | 
                 else if EXPR then EOL BLOCK ELSE_STMT   |
                 else if EXPR then EOL BLOCK
-ELSE_STMT  -> else EOL BLOCK 
-EXPR         -> OR_EXPR
+ELSE_STMT    -> else EOL BLOCK 
+EXPR         -> OR_EXPR | FN_EXPR | empty
+FN_EXPR      -> function ( ARG_LIST ) EOL BLOCK end function EOL
+ARG_LIST     -> ARG,*
+ARG          -> IDENTIFIER | IDENTIFIER = STRING | IDENTIFIER = NUMBER | IDENTIFIER = NULL
 OR_EXPR      -> AND_EXPR OR_EXPR_R
 OR_EXPR_R    -> or OR_EXPR OR_EXPR_R | empty
 AND_EXPR     -> LOG_UNARY AND_EXPR_R
@@ -74,7 +81,7 @@ TERM_R       -> * TERM TERM_R | / TERM TERM_R | % TERM TERM_R | empty
 UNARY        -> +UNARY | -UNARY | POWER
 POWER        -> PRIMARY ^ UNARY | PRIMARY
 PRIMARY      -> TERMINAL | ( EXPR )
-TERMINAL     -> IDENTIFIER | STRING | NUMBER
+TERMINAL     -> IDENTIFIER | STRING | NUMBER | NULL
  **/
 
 typedef enum {
@@ -84,6 +91,7 @@ typedef enum {
     SYM_EXPR_STMT, SYM_PRNT_STMT,
     SYM_IFSTMT, SYM_ELSEIF, SYM_ELSE, SYM_BLOCK, SYM_WHILE, SYM_BREAK, SYM_CONTINUE,
     SYM_EXPR,
+    SYM_FN_EXPR, SYM_ARG_LIST, SYM_ARG,
     SYM_OR_EXPR, SYM_OR_EXPR_R,
     SYM_AND_EXPR, SYM_AND_EXPR_R,
     SYM_LOG_UNARY,
@@ -101,6 +109,7 @@ static const char* SymbolTypeString[] = {
     "SYM_EXPR_STMT", "SYM_PRNT_STMT",
     "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK", "SYM_WHILE", "SYM_BREAK", "SYM_CONTINUE",
     "SYM_EXPR",
+    "SYM_FN_EXPR", "SYM_ARG_LIST", "SYM_ARG",
     "SYM_OR_EXPR", "SYM_OR_EXPR_R",
     "SYM_AND_EXPR", "SYM_AND_EXPR_R",
     "SYM_LOG_UNARY",

@@ -274,6 +274,10 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr,
                 lexEnd++; colNum++;
             }
             break;
+        case ',':
+            tokType = TOKEN_COMMA;
+            lexEnd++; colNum++;
+            break;
         case '=':
             // Possible: =, ==
             if (lookahead2 == '=') {

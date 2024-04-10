@@ -18,6 +18,9 @@ Error* parseElseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *
 Error* parseExprStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parsePrntStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseFnExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseArgList(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseArg(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseOrExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseOrExprR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseAndExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
