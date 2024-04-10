@@ -19,7 +19,7 @@ void reportError(const char *msg)
 }
 
 // Returns true if expecting more input
-int runLine(const char *source, Context *executionContext)
+int runLine(const char *source, Context *executionContext, int asREPL)
 {
     //executionLogger = consoleLogger;
     initErrorContext(source);
@@ -62,7 +62,8 @@ int runLine(const char *source, Context *executionContext)
     log_message(&executionLogger, "\n");
 
     if (parseError != NULL) {
-        if (parseError->type == ERR_SYNTAX_EOF) {
+        if (parseError->type == ERR_SYNTAX_EOF && asREPL) {
+            // Only ask for more input if this is in REPL mode.
             error_free(parseError);
             astnode_free(root);
             return 1;
@@ -129,7 +130,7 @@ void runFile(const char* fname)
 
     // Run the entire file.
     Context *globalCtx = context_new(NULL, NULL);
-    runLine(source, globalCtx);
+    runLine(source, globalCtx, 0);
 }
 
 void runREPL()
@@ -158,7 +159,7 @@ void runREPL()
         strncpy(source + sourceSz, buffer, bufSz);
         sourceSz += bufSz;
 
-        if (!runLine(source, globalCtx)) {
+        if (!runLine(source, globalCtx, 1)) {
             // Not expecting any more input
             sourceSz = 0;
             memset(source, 0, REPL_BUF_MAX);

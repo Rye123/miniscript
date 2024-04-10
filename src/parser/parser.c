@@ -405,10 +405,18 @@ Error *parsePrntStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *
 {
     printParse("parsePrntStmt", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_PRNT_STMT, NULL);
+    
     Error *err = NULL;
     err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PRINT);
     if (err)
         return err;
+
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type == TOKEN_NL) {
+        astnode_addChildNode(parent, self);
+        return NULL;
+    }
+    
     err = parseExpr(self, tokens, tokensLen, curIdx);
     if (err)
         return err;
@@ -423,6 +431,12 @@ Error *parseExprStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *
 {
     printParse("parseExprStmt", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_EXPR_STMT, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type == TOKEN_NL) {
+        astnode_addChildNode(parent, self);
+        return NULL;
+    }
+    
     Error *err = NULL;
     err = parseExpr(self, tokens, tokensLen, curIdx);
     if (err)

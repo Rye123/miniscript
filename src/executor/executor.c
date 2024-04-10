@@ -400,6 +400,12 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 {
     if (prntStmt->type != SYM_PRNT_STMT)
         criticalError("prntStmt: Invalid symbol type, expected SYM_PRNT_STMT");
+    if (prntStmt->numChildren == 1 && prntStmt->children[0]->tok->type == TOKEN_PRINT) {
+        log_message(&consoleLogger,"\n");
+        log_message(&executionLogger,"\n");
+        log_message(&resultLogger,"\n");
+        return value_newNull();
+    }
     if (prntStmt->numChildren == 3 &&
 	prntStmt->children[0]->tok->type == TOKEN_PRINT &&
 	prntStmt->children[1]->type == SYM_EXPR &&

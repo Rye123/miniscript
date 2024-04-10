@@ -9,14 +9,14 @@ Standard -- this is used by the executor
      LINE       -> ASMT  | STMT | EOL      (EOL is for empty line)
      ASMT       -> IDENTIFIER = EXPR EOL   (Used for assignment or declaration)
      STMT       -> EXPR_STMT | PRNT_STMT
-     EXPR_STMT  -> EXPR EOL
-     PRNT_STMT  -> print EXPR EOL
+     EXPR_STMT  -> EXPR EOL | EOL
+     PRNT_STMT  -> print EXPR EOL | print EOL
      IF_STMT    -> if EXPR then BLOCK ELSEIF_STMT end if
      ELSEIF_STMT-> else if EXPR_STMT then BLOCK ELSEIF_STMT | 
                    else if EXPR_STMT then BLOCK ELSE_STMT
      ELSE_STMT  -> else BLOCK 
      WHILE_STMT -> while EXPR then BLOCK end while
-     EXPR       -> OR_EXPR
+     EXPR       -> OR_EXPR | empty
 (LR) OR_EXPR    -> OR_EXPR or AND_EXPR | AND_EXPR
 (LR) AND_EXPR   -> AND_EXPR and LOG_UNARY | LOG_UNARY
 (RR) LOG_UNARY  -> not LOG_UNARY | EQUALITY
@@ -33,8 +33,8 @@ START        -> LINE* EOF
 LINE         -> ASMT | STMT | EOL
 ASMT         -> IDENTIFIER = EXPR EOL
 STMT         -> EXPR_STMT | PRNT_STMT
-EXPR_STMT    -> EXPR EOL
-PRNT_STMT    -> TOKEN_PRINT EXPR EOL
+EXPR_STMT    -> EXPR EOL | EOL
+PRNT_STMT    -> TOKEN_PRINT EXPR EOL | EOL
 IF_STMT      -> if EXPR_STMT then BLOCK ELSEIF_STMT end if
 ELSEIF_STMT  -> else if EXPR_STMT then BLOCK ELSEIF_STMT | 
                 else if EXPR_STMT then BLOCK ELSE_STMT
