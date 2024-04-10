@@ -32,6 +32,7 @@ typedef struct _context {
     struct _context *parent;  // Points to the parent scope/context
     ExecSymbol** symbols;      // Symbols defined in this context. 
     size_t symbolCount;
+    int hasBreakOrContinue; // True if it is exiting break
 } Context;
 
 // Defines a new context. The global context would have parent = NULL and global = NULL.
