@@ -2,38 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../logger/logger.h"
+#include "../error/error.h"
 #include "token.h"
 #include "lexer.h"
-#define MAX_ERRMSG_LEN 255
 
-void lexError(const char *source, const char *errStr, int lineNum, int colNum)
+void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount)
 {
-    //TODO: shift this into an error struct
-    log_message(&executionLogger, "\033[91mLexing Error: %s (Line %d, Column %d)\033[0m\n", errStr, lineNum, colNum);
-    // Print the appropriate line
-    int curLine = 0; size_t targetLineLen = 0;
-    char c; int i = 0;
-    do {
-        if (curLine == lineNum) {
-            int start_i = i;
-            do {
-                c = *(source + i);
-                targetLineLen = i - start_i;
-                i++;
-            } while (c != '\n' && c != '\0');
-            break;
-        }
-        c = *(source + i);
-        if (c == '\n')
-            curLine++;
-        i++;
-    } while (c != '\0');
+    Error *err = error_new(ERR_TOKEN, lineNum, colNum);
+    sprintf(err->message, "%s (Line %d, Column %d)", errStr, lineNum, colNum);
 
-    // Duplicate the line
-    char *line = strndup((source + i - targetLineLen - 1), targetLineLen);
-    log_message(&executionLogger, "\033[91m%s\033[0m\n", line);
-    log_message(&executionLogger, "\033[91m%*c^\033[0m\n\n", colNum, ' ');
-    free(line);
+    // Add Error to list
+    *errorCount = *errorCount + 1;
+    *errorsPtr = realloc(*errorsPtr, sizeof(Error *) * (*errorCount));
+    (*errorsPtr)[*(errorCount) - 1] = err;
 }
 
 // Returns true if candidate is an exact match for expected
@@ -157,7 +138,7 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
     }
     return lexEnd;
 }
-void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
+void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source)
 {
     size_t srcLen = strlen(source);
     int lineNum = 0;
@@ -189,7 +170,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
             for (size_t i = lexStart + 1; *(source + i) != '"'; i++) {
                 if (*(source + i) == '\n' || *(source + i) == '\0') {
                     tokType = TOKEN_UNKNOWN;
-                    lexError(source, "Unterminated string", startLine, startCol);
+                    lexError("Unterminated string", lineNum, colNum, errorsPtr, errorCount);
                     lexEnd++; colNum++;
                     break;
                 }
@@ -280,7 +261,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
                 colNum += lexEnd - lexStart;
                 if (errLen > 0) {
                     tokType = TOKEN_UNKNOWN;
-                    lexError(source, errMsg, lineNum, colNum);
+                    lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
                 }
             } else {
                 tokType = TOKEN_PERIOD;
@@ -372,7 +353,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
                 colNum += lexEnd - lexStart;  // lexEnd and lexStart on same line, so colNum would be still correct
                 if (errLen > 0) {
                     tokType = TOKEN_UNKNOWN;
-                    lexError(source, errMsg, lineNum, colNum);
+                    lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
                 }
             } else if (lookahead == ' ' || lookahead == '\t' || lookahead == '\r') {
                 // Whitespace, ignore 
@@ -380,7 +361,8 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
             } else {
                 // Unknown
                 tokType = TOKEN_UNKNOWN;
-                lexError(source, "Unexpected character", lineNum, colNum);
+                sprintf(errMsg, "Unexpected character %c", lookahead);
+                lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
                 lexEnd++; colNum++;
             }
         }
@@ -400,7 +382,8 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source)
     }
 
     // Add NL token, if it doesn't already end with one
-    if ((*tokensPtr)[*(tokenCount) - 1]->type != TOKEN_NL) {
+    
+    if (*tokenCount > 0 && (*tokensPtr)[*(tokenCount) - 1]->type != TOKEN_NL) {
         *tokenCount += 2;
         *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
         lineNum += 1; colNum = 0;

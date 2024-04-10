@@ -3,28 +3,47 @@
 #include <errno.h>
 #include <string.h>
 #include "logger/logger.h"
+#include "error/error.h"
 #include "lexer/token.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "executor/executor.h"
 #include "executor/symboltable.h"
-#define LINE_MAX 255
+#define LINE_MAX 1000
 
 void runLine(const char *source, Context *executionContext)
 {
+    initErrorContext(source);
     log_message(&executionLogger, "Input:\n%s\n", source);
 
     // Lexical Analysis
     // 1. Initialisation
     size_t tokenCount = 0;
+    size_t errorCount = 0;
     Token **tokens = malloc(sizeof(Token *) * 0);
+    Error **errors = malloc(sizeof(Error *) * 0);
     // 2. Lexing
-    lex((const Token ***) &tokens, &tokenCount, source);
+    lex((const Token ***) &tokens, &tokenCount,
+        (const Error ***) &errors, &errorCount, source);
 
     log_message(&executionLogger, "--- LEXING RESULT ---\n");
     log_message(&executionLogger, "Token Count: %lu\n", tokenCount);
     for (size_t i = 0; i < tokenCount; i++)
         token_print(tokens[i]);
+
+    if (errorCount != 0) {
+        char errStr[MAX_ERRSTR_LEN];
+        for (size_t i = 0; i < errorCount; i++) {
+            error_string(errors[i], errStr, MAX_ERRSTR_LEN);
+            log_message(&consoleLogger, "%s\n", errStr);
+            error_free(errors[i]);
+        }
+        free(errors);
+        for (size_t i = 0; i < tokenCount; i++)
+            token_free(tokens[i]);
+        free(tokens);
+        return;
+    }
     
     // 3. Syntactic Analysis
     ASTNode *root = astnode_new(SYM_START, NULL);

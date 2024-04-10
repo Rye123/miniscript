@@ -1,23 +1,26 @@
 #ifndef _SYMBOLTABLE_H_
 #define _SYMBOLTABLE_H_
+#include "../error/error.h"
 #include "executor.h"
 
 typedef enum {
     TYPE_NUMBER,
     TYPE_STRING,
     TYPE_NULL,
-    TYPE_IDENTIFIER
+    TYPE_IDENTIFIER,
+    TYPE_ERROR
 } ValueType;
 
-static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER"};
+static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER", "TYPE_ERROR"};
 
 typedef struct {
     ValueType type;
     union {
-	void* literal_null;
-	double literal_num;
-	char* literal_str;
-	char* identifier_name;
+        void* literal_null;
+        double literal_num;
+        char* literal_str;
+        char* identifier_name;
+        Error* error_ptr;
     } value;
 } ExecValue;
 
@@ -45,6 +48,7 @@ ExecValue* value_newNull();
 ExecValue* value_newString(char* strValue);
 ExecValue* value_newNumber(double numValue);
 ExecValue* value_newIdentifier(char *identifierName);
+ExecValue* value_newError(Error *err);
 
 // Clones an ExecValue
 ExecValue* value_clone(ExecValue *val);
@@ -67,9 +71,6 @@ void context_setSymbol(Context* ctx, ExecValue* identifier, ExecValue* value);
 
 // Frees the context, including all copied symbols.
 void context_free(Context* ctx);
-
-ExecValue* criticalError(char *msg);
-ExecValue* executionError(char *msg);
 
 // Returns 0 if the value is FALSE, 1 if TRUE.
 int value_falsiness(ExecValue *);
