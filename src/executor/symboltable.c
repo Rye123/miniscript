@@ -288,11 +288,53 @@ ExecValue* value_opSub(ExecValue *e1, ExecValue *e2)
     if (e1->type == TYPE_NUMBER && e2->type == TYPE_NUMBER) {
         double result = e1->value.literal_num - e2->value.literal_num;
         return value_newNumber(result, e1->tok);
+    } else if (e1->type == TYPE_STRING && e2->type == TYPE_STRING) {
+        // Delete s2 from the end of s1, assuming s2 is an exact match of the end of s1
+        char *s1 = e1->value.literal_str;
+        char *s2 = e2->value.literal_str;
+        size_t s1Len = strlen(s1);
+        size_t s2Len = strlen(s2);
+        if (s1Len < s2Len) {
+            // Impossible for s2 to be an exact match of s1
+            return value_newString(s1, e1->tok);
+        }
+        
+        int matching = 0; // true if we're in the matching state
+        size_t s2Idx = s2Len - 1;
+        size_t s1StartOfS2 = s1Len;
+
+        short match = 0;
+
+        for (size_t i = s1Len-1; i >= 0; i--) {
+            if (s2Idx == -1) {
+                // Exact match found
+                match = 1;
+                break;
+            }
+            if (s1[i] != s2[s2Idx]) {
+                // Definitely not an exact match
+                match = 0;
+                break;
+            }
+            s2Idx--;
+        }
+
+        if (!match)
+            return value_newString(s1, e1->tok);
+
+        // Exact match: can safely just copy exactly resultLen characters starting from s1
+        size_t resultLen = s1Len - s2Len;
+        char *resultString = malloc(sizeof(char) * (resultLen + 1));
+        strncpy(resultString, s1, resultLen);
+        resultString[resultLen] = '\0';
+        ExecValue *resultVal = value_newString(resultString, e1->tok);
+        free(resultString);
+        return resultVal;
     }
 
     // Invalid types
     Error *typeErr = error_new(ERR_RUNTIME_TYPE, -1, -1);
-    snprintf(typeErr->message, MAX_ERRMSG_LEN, "subtraction expects two numbers, instead got values of type %s and %s", ValueTypeString[e1->type], ValueTypeString[e2->type]);
+    snprintf(typeErr->message, MAX_ERRMSG_LEN, "subtraction expects two numbers or two strings, instead got values of type %s and %s", ValueTypeString[e1->type], ValueTypeString[e2->type]);
     if (e1->type == TYPE_NUMBER)
         return value_newError(typeErr, e2->tok);
     else

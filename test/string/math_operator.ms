@@ -8,3 +8,7 @@ print str2 * 0.5 + str1 // expect: banapple
 print str1 * 0 == "" // expect: 1
 print "banana.txt" - ".txt" // expect: banana
 print "banana" - "na" * 2 // expect: ba
+print "banana" - "anana" // expect: b
+print "banana" - "abanana" // expect: banana
+print "banana" - "bananaa" // expect: banana
+print "banana" - "bananarama" // expect: banana
