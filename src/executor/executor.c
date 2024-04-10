@@ -6,6 +6,21 @@
 #include "executor.h"
 #include "symboltable.h"
 
+// Returns the actual value of `val` if it's an identifier, otherwise just returns `val`.
+// If it's an identifier, `val` is freed.
+ExecValue *unpackValue(Context *ctx, ExecValue *val)
+{
+    if (val->type == TYPE_IDENTIFIER) {
+        // Extract symbol value
+        ExecValue *newVal = context_getValue(ctx, val);
+        if (newVal == NULL)
+            return executionError("Undeclared identifier.");
+        value_free(val);
+        val = newVal;
+    }
+    return val;
+}
+
 ExecValue *execTerminal(Context* ctx, ASTNode *terminal)
 {
     if (terminal->type != SYM_TERMINAL)
@@ -61,24 +76,9 @@ ExecValue *execPower(Context* ctx, ASTNode *power)
         ExecValue *lVal = execPrimary(ctx, power->children[0]);
         ExecValue *rVal = execUnary(ctx, power->children[2]);
         ExecValue *retVal;
-	
-        if (lVal->type == TYPE_IDENTIFIER) {
-            // Extract symbol value
-            ExecValue *newVal = context_getValue(ctx, lVal);
-            if (newVal == NULL)
-                return criticalError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = newVal;
-        }
 
-        if (rVal->type == TYPE_IDENTIFIER) {
-            // Extract symbol value
-            ExecValue *newVal = context_getValue(ctx, lVal);
-            if (newVal == NULL)
-                return criticalError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = newVal;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         TokenType op = power->children[1]->tok->type;
         if (op != TOKEN_CARET)
@@ -103,14 +103,8 @@ ExecValue *execUnary(Context* ctx, ASTNode *unary)
         ExecValue *rVal = execUnary(ctx, unary->children[1]);
         ExecValue *retVal;
         TokenType op = unary->children[0]->tok->type;
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        
+        rVal = unpackValue(ctx, rVal);
 
         switch (op) {
         case TOKEN_PLUS:  retVal = value_opUnaryPos(rVal); break;
@@ -138,21 +132,8 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
         ExecValue *rVal = execUnary(ctx, term->children[2]);
         ExecValue *retVal;
 
-        if (lVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, lVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = val;
-        }
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         TokenType op = term->children[1]->tok->type;
 
@@ -182,21 +163,8 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
         ExecValue *rVal = execTerm(ctx, sum->children[2]);
         ExecValue *retVal;
 
-        if (lVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, lVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = val;
-        }
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         TokenType op = sum->children[1]->tok->type;
 
@@ -225,21 +193,8 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
         ExecValue *rVal = execSum(ctx, comparison->children[2]);
         ExecValue *retVal;
 
-        if (lVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, lVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = val;
-        }
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         TokenType op = comparison->children[1]->tok->type;
 
@@ -270,21 +225,8 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
         ExecValue *rVal = execComparison(ctx, equality->children[2]);
         ExecValue *retVal;
 
-        if (lVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, lVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = val;
-        }
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         TokenType op = equality->children[1]->tok->type;
 
@@ -311,14 +253,8 @@ ExecValue* execLogUnary(Context* ctx, ASTNode* logUnary)
         ExecValue *rVal = execLogUnary(ctx, logUnary->children[1]);
         ExecValue *retVal;
         TokenType op = logUnary->children[0]->tok->type;
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        
+        rVal = unpackValue(ctx, rVal);
 
         if (op == TOKEN_NOT)
             retVal = value_opNot(rVal);
@@ -346,21 +282,8 @@ ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
         ExecValue *rVal = execLogUnary(ctx, andExpr->children[2]);
         ExecValue *retVal;
 
-        if (lVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, lVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = val;
-        }
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         retVal = value_opAnd(lVal, rVal);
         value_free(lVal); value_free(rVal);
@@ -383,21 +306,8 @@ ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
         ExecValue *rVal = execAndExpr(ctx, orExpr->children[2]);
         ExecValue *retVal;
 
-        if (lVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, lVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(lVal);
-            lVal = val;
-        }
-	
-        if (rVal->type == TYPE_IDENTIFIER) {
-            ExecValue *val = context_getValue(ctx, rVal);
-            if (val == NULL)
-                return executionError("Undeclared identifier.");
-            value_free(rVal);
-            rVal = val;
-        }
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
 
         retVal = value_opOr(lVal, rVal);
         value_free(lVal); value_free(rVal);
@@ -428,12 +338,7 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 	prntStmt->children[2]->tok->type == TOKEN_NL) {
 		ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
 
-		if (exprResult->type == TYPE_IDENTIFIER) {
-			// Get symbol value
-			ExecValue *value = context_getValue(ctx, exprResult);
-			value_free(exprResult);
-			exprResult = value;
-		}
+        exprResult = unpackValue(ctx, exprResult);
 		
 		switch (exprResult->type) {
 			case TYPE_IDENTIFIER:
@@ -499,6 +404,7 @@ ExecValue *execElseIf(Context* ctx, ASTNode *elseIfStmt){
         return criticalError("elseifstmt: Invalid symbol type, expected SYM_ELSEIF");
 
     ExecValue *expr = execExpr(ctx, elseIfStmt->children[2]);
+    expr = unpackValue(ctx, expr);
     if (value_falsiness(expr) == 1) { // true branch
         return execBlock(ctx, elseIfStmt->children[5]);
     } else {
@@ -519,6 +425,7 @@ ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
         return criticalError("ifstmt: Invalid symbol type, expected SYM_IFSTMT");
 
     ExecValue *expr = execExpr(ctx, ifStmt->children[1]);
+    expr = unpackValue(ctx, expr);
     if (value_falsiness(expr) == 1) { // true branch
         return execBlock(ctx, ifStmt->children[4]);
     } else {
@@ -562,12 +469,7 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
         if (sym == NULL)
             context_addSymbol(ctx, lvalue);
 
-        if (rvalue->type == TYPE_IDENTIFIER) {
-            // Get symbol value
-            ExecValue *value = context_getValue(ctx, rvalue);
-            value_free(rvalue);
-            rvalue = value;
-        }
+        rvalue = unpackValue(ctx, rvalue);
         
         context_setSymbol(ctx, lvalue, rvalue);
         value_free(lvalue); value_free(rvalue);
