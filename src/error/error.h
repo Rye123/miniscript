@@ -41,7 +41,7 @@ static const char *ErrorTypeString[] = {
     "Unexpected EOF Error",
     "Runtime Error",
     "Type Error",
-    "Unidentified Identifier"
+    "Undefined Identifier"
 };
 
 typedef struct {
