@@ -1,24 +1,28 @@
 #ifndef _SYMBOLTABLE_H_
 #define _SYMBOLTABLE_H_
+#include "../error/error.h"
 #include "executor.h"
 
 typedef enum {
     TYPE_NUMBER,
     TYPE_STRING,
     TYPE_NULL,
-    TYPE_IDENTIFIER
+    TYPE_IDENTIFIER,
+    TYPE_ERROR
 } ValueType;
 
-static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER"};
+static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER", "TYPE_ERROR"};
 
 typedef struct {
     ValueType type;
     union {
-	void* literal_null;
-	double literal_num;
-	char* literal_str;
-	char* identifier_name;
+        void* literal_null;
+        double literal_num;
+        char* literal_str;
+        char* identifier_name;
+        Error* error_ptr;
     } value;
+    Token* tok; // Used to add context for the ExecValue
 } ExecValue;
 
 // A unique identifier in the current scope, not to be confused with the Symbol from parsing.
@@ -43,9 +47,10 @@ void context_addSymbol(Context* ctx, ExecValue* identifier);
 
 // Defines new ExecValues
 ExecValue* value_newNull();
-ExecValue* value_newString(char* strValue);
-ExecValue* value_newNumber(double numValue);
-ExecValue* value_newIdentifier(char *identifierName);
+ExecValue* value_newString(char* strValue, Token* tokPtr);
+ExecValue* value_newNumber(double numValue, Token* tokPtr);
+ExecValue* value_newIdentifier(char *identifierName, Token* tokPtr);
+ExecValue* value_newError(Error *err, Token* tokPtr);
 
 // Clones an ExecValue
 ExecValue* value_clone(ExecValue *val);
@@ -69,13 +74,10 @@ void context_setSymbol(Context* ctx, ExecValue* identifier, ExecValue* value);
 // Frees the context, including all copied symbols.
 void context_free(Context* ctx);
 
-ExecValue* criticalError(char *msg);
-ExecValue* executionError(char *msg);
-
 // Returns 0 if the value is FALSE, 1 if TRUE.
 int value_falsiness(ExecValue *);
 
-/* Returns a NEW ExecValue* with the result of these operations. */
+/* Returns a NEW ExecValue* with the result of these operations.*/
 ExecValue* value_opUnaryPos(ExecValue*);
 ExecValue* value_opUnaryNeg(ExecValue*);
 ExecValue* value_opNot(ExecValue*);

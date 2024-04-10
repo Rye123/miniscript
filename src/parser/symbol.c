@@ -166,7 +166,7 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
     }
 
     if (childIndex == -1) {
-        printf("_astnode_left_skew Critical Error: Couldn't find targetType %s in node of type %s.", SymbolTypeString[targetType], SymbolTypeString[node->type]);
+        log_message(&executionLogger, "_astnode_left_skew Critical Error: Couldn't find targetType %s in node of type %s.", SymbolTypeString[targetType], SymbolTypeString[node->type]);
         exit(1);
     }
 
