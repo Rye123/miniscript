@@ -10,6 +10,8 @@ Error* parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curI
 Error* parseAsmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseWhile(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseBreak(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseContinue(ASTNode *parent, Token **tokens, size_t tokensLen, size_t curIdx);
 Error* parseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseElseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseElseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);

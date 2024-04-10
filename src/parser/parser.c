@@ -648,7 +648,7 @@ Error *parseWhile(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *cu
 
 Error *parseBreak(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *curIdx)
 {
-    printParse("parseWhile", tokens, curIdx);
+    printParse("parseBreak", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_BREAK, NULL);
     Error *err = NULL;
     err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_BREAK);
