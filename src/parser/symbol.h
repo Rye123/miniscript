@@ -11,10 +11,11 @@ Standard -- this is used by the executor
      STMT       -> EXPR_STMT | PRNT_STMT
      EXPR_STMT  -> EXPR EOL
      PRNT_STMT  -> print EXPR EOL
-     IF_STMT    -> if EXPR_STMT then BLOCK ELSEIF_STMT end if
+     IF_STMT    -> if EXPR then BLOCK ELSEIF_STMT end if
      ELSEIF_STMT-> else if EXPR_STMT then BLOCK ELSEIF_STMT | 
                    else if EXPR_STMT then BLOCK ELSE_STMT
      ELSE_STMT  -> else BLOCK 
+     WHILE_STMT -> while EXPR then BLOCK end while
      EXPR       -> OR_EXPR
 (LR) OR_EXPR    -> OR_EXPR or AND_EXPR | AND_EXPR
 (LR) AND_EXPR   -> AND_EXPR and LOG_UNARY | LOG_UNARY
@@ -38,6 +39,7 @@ IF_STMT      -> if EXPR_STMT then BLOCK ELSEIF_STMT end if
 ELSEIF_STMT  -> else if EXPR_STMT then BLOCK ELSEIF_STMT | 
                 else if EXPR_STMT then BLOCK ELSE_STMT
 ELSE_STMT    -> else BLOCK 
+WHILE_STMT -> while EXPR then BLOCK end while
 EXPR         -> OR_EXPR
 OR_EXPR      -> AND_EXPR OR_EXPR_R
 OR_EXPR_R    -> or OR_EXPR OR_EXPR_R | empty
@@ -69,7 +71,7 @@ typedef enum {
     SYM_LINE,
     SYM_ASMT, SYM_STMT,
     SYM_EXPR_STMT, SYM_PRNT_STMT,
-    SYM_IFSTMT, SYM_ELSEIF, SYM_ELSE, SYM_BLOCK,
+    SYM_IFSTMT, SYM_ELSEIF, SYM_ELSE, SYM_BLOCK, SYM_WHILE,
     SYM_EXPR,
     SYM_OR_EXPR, SYM_OR_EXPR_R,
     SYM_AND_EXPR, SYM_AND_EXPR_R,
@@ -86,7 +88,7 @@ static const char* SymbolTypeString[] = {
     "SYM_LINE",
     "SYM_ASMT", "SYM_STMT",
     "SYM_EXPR_STMT", "SYM_PRNT_STMT",
-    "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK"
+    "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK", "SYM_WHILE",
     "SYM_EXPR",
     "SYM_OR_EXPR", "SYM_OR_EXPR_R",
     "SYM_AND_EXPR", "SYM_AND_EXPR_R",

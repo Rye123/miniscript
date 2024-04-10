@@ -378,6 +378,27 @@ void parseIfStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curI
     astnode_addChildNode(parent, self);
 }
 
+void parseWhile(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseWhile", tokens, curIdx);
+    ASTNode* self = astnode_new(SYM_WHILE, NULL);
+
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_WHILE);
+    parseExpr(self, tokens, tokensLen, curIdx);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+    // Block
+    ASTNode *block = astnode_new(SYM_BLOCK, NULL);
+    astnode_addChildNode(self, block);
+    while (tokens[*curIdx]->type != TOKEN_END){// Still line in the block
+        parseLine(block, tokens, tokensLen, curIdx);
+    }
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_END);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_WHILE);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+
+    astnode_addChildNode(parent, self);
+}
+
 void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseStmt", tokens, curIdx);
@@ -385,6 +406,8 @@ void parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
     if (lookahead->type == TOKEN_PRINT)
 	    parsePrntStmt(self, tokens, tokensLen, curIdx);
+    else if (lookahead->type == TOKEN_WHILE)
+        parseWhile(self, tokens, tokensLen, curIdx);
     else if (lookahead->type == TOKEN_IF)
         parseIfStmt(self, tokens, tokensLen, curIdx);
     else
