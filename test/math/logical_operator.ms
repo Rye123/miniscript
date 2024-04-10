@@ -29,4 +29,6 @@ print 1 or "full string" // expect: 1
 print "" or 1 // expect: 1
 print 0 or "" or true // expect: 1
 
-
+// not
+print not true // expect: 0
+print not 0 // expect: 1
