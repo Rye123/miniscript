@@ -389,10 +389,26 @@ ExecValue* value_opDiv(ExecValue *e1, ExecValue *e2)
         double result = e1->value.literal_num / e2->value.literal_num;
         return value_newNumber(result, e1->tok);
     }
+    if (e1->type == TYPE_STRING && e2->type == TYPE_NUMBER) {
+        double multiplier = e2->value.literal_num;
+        if (multiplier < 0)
+            multiplier = 0;
+        char *str = e1->value.literal_str;
+        size_t origLen = strlen(str);
+        size_t resultLen = (size_t) ((double) origLen / multiplier);
+        char *newStr = malloc((resultLen + 1) * sizeof(char));
+        // Start copying the str into newStr until we reach the end of string
+        for (size_t i = 0; i < resultLen; i++)
+            newStr[i] = *(str + (i % origLen));
+        newStr[resultLen] = '\0';
+        ExecValue *resultVal = value_newString(newStr, e1->tok);
+        free(newStr);
+        return resultVal;
+    }
 
     // Invalid types
     Error *typeErr = error_new(ERR_RUNTIME_TYPE, -1, -1);
-    snprintf(typeErr->message, MAX_ERRMSG_LEN, "division expects two numbers, instead got values of type %s and %s", ValueTypeString[e1->type], ValueTypeString[e2->type]);
+    snprintf(typeErr->message, MAX_ERRMSG_LEN, "division expects two numbers or a string and a number, instead got values of type %s and %s", ValueTypeString[e1->type], ValueTypeString[e2->type]);
     if (e1->type == TYPE_NUMBER)
         return value_newError(typeErr, e2->tok);
     else
