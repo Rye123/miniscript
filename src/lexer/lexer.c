@@ -9,7 +9,7 @@
 void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount)
 {
     Error *err = error_new(ERR_TOKEN, lineNum, colNum);
-    sprintf(err->message, "%s (Line %d, Column %d)", errStr, lineNum, colNum);
+    sprintf(err->message, "%s", errStr);
 
     // Add Error to list
     *errorCount = *errorCount + 1;
@@ -335,7 +335,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr,
             break;
         case '\n':
             tokType = TOKEN_NL;
-            lineNum++; colNum++;
+            lineNum++; colNum = 0;
             lexEnd++;
             break;
         default:

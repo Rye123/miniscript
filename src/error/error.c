@@ -54,6 +54,9 @@ void error_string(Error *error, char *dest, size_t destLen)
     strncpy(dest, ErrorTypeString[error->type], typeSize);
     i += typeSize;
 
+    // 2. Error location
+    size_t locSize = snprintf(dest + i, MAX_ERRTYPE_LEN - typeSize, " (Line %d, Column %d)", error->lineNum+1, error->colNum+1);
+    i += locSize;
     dest[i] = ':';
     dest[i+1] = ' ';
     i += 2;
@@ -65,6 +68,7 @@ void error_string(Error *error, char *dest, size_t destLen)
 
     // 3. Add context
     if (error->lineNum == -1 || error->colNum == -1) {
+        // If no context, return
         dest[i] = '\0';
         return;
     }

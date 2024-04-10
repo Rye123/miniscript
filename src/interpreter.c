@@ -143,7 +143,7 @@ void runREPL()
     memset(source, 0, REPL_BUF_MAX);
     while (1) {
         if (sourceSz > 0)
-            log_message(&consoleLogger, "..     "); // Prompt for more input
+            log_message(&consoleLogger, ".. "); // Prompt for more input
         else
             log_message(&consoleLogger, ">> "); // Standard prompt
 

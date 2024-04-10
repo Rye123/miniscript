@@ -1,10 +1,17 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
-#define MAX_ERRCTX_LEN 255
-#define MAX_ERRMSG_LEN 223
 
-// MAX_ERRSTR_LEN = 32 (max size of type string) + 223 (max size of errmsg) + 255 + 255 (context and space for context)
-#define MAX_ERRSTR_LEN 765
+// Max size of the string: " [error type] (Line [line], Column [col])"
+#define MAX_ERRTYPE_LEN 64
+
+// Max size of the error message itself
+#define MAX_ERRMSG_LEN 255
+
+// Max size of the line of code printed out as context for the error
+#define MAX_ERRCTX_LEN 255
+
+// Max size of the entire error string
+#define MAX_ERRSTR_LEN 574
 #include <stdlib.h>
 
 // Denotes an error that is with the interpreter itself.
@@ -29,12 +36,12 @@ typedef enum {
 } ErrorType;
 
 static const char *ErrorTypeString[] = {
-    "Tokenisation Error",
-    "Syntax Error",
+    "Lexer Error",
+    "Compiler Error",
     "Unexpected EOF Error",
     "Runtime Error",
     "Type Error",
-    "Name Error"
+    "Unidentified Identifier"
 };
 
 typedef struct {
