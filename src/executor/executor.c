@@ -84,6 +84,8 @@ ExecValue *execPower(Context* ctx, ASTNode *power)
         ExecValue *rVal = execUnary(ctx, power->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -91,9 +93,6 @@ ExecValue *execPower(Context* ctx, ASTNode *power)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         TokenType op = power->children[1]->tok->type;
         if (op != TOKEN_CARET)
@@ -119,11 +118,10 @@ ExecValue *execUnary(Context* ctx, ASTNode *unary)
         ExecValue *rVal = execUnary(ctx, unary->children[1]);
         ExecValue *retVal = NULL;
         TokenType op = unary->children[0]->tok->type;
-
-        if (rVal->type == TYPE_ERROR)
-            return rVal;
         
         rVal = unpackValue(ctx, rVal);
+        if (rVal->type == TYPE_ERROR)
+            return rVal;
 
         switch (op) {
         case TOKEN_PLUS:  retVal = value_opUnaryPos(rVal); break;
@@ -152,6 +150,8 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
         ExecValue *rVal = execUnary(ctx, term->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -159,9 +159,6 @@ ExecValue *execTerm(Context* ctx, ASTNode *term)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         TokenType op = term->children[1]->tok->type;
 
@@ -192,6 +189,8 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
         ExecValue *rVal = execTerm(ctx, sum->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -199,9 +198,6 @@ ExecValue *execSum(Context* ctx, ASTNode *sum)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         TokenType op = sum->children[1]->tok->type;
 
@@ -231,6 +227,8 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
         ExecValue *rVal = execSum(ctx, comparison->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -238,9 +236,6 @@ ExecValue *execComparison(Context* ctx, ASTNode *comparison)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         TokenType op = comparison->children[1]->tok->type;
 
@@ -272,6 +267,8 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
         ExecValue *rVal = execComparison(ctx, equality->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -279,9 +276,6 @@ ExecValue *execEquality(Context* ctx, ASTNode *equality)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         TokenType op = equality->children[1]->tok->type;
 
@@ -309,11 +303,10 @@ ExecValue* execLogUnary(Context* ctx, ASTNode* logUnary)
         ExecValue *rVal = execLogUnary(ctx, logUnary->children[1]);
         ExecValue *retVal = NULL;
         TokenType op = logUnary->children[0]->tok->type;
-
-        if (rVal->type == TYPE_ERROR)
-            return rVal;
         
         rVal = unpackValue(ctx, rVal);
+        if (rVal->type == TYPE_ERROR)
+            return rVal;
 
         if (op == TOKEN_NOT)
             retVal = value_opNot(rVal);
@@ -341,6 +334,8 @@ ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
         ExecValue *rVal = execLogUnary(ctx, andExpr->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -348,9 +343,6 @@ ExecValue* execAndExpr(Context* ctx, ASTNode* andExpr)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         retVal = value_opAnd(lVal, rVal);
         value_free(lVal); value_free(rVal);
@@ -374,6 +366,8 @@ ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
         ExecValue *rVal = execAndExpr(ctx, orExpr->children[2]);
         ExecValue *retVal = NULL;
 
+        lVal = unpackValue(ctx, lVal);
+        rVal = unpackValue(ctx, rVal);
         if (lVal->type == TYPE_ERROR) {
             value_free(rVal);
             return lVal;
@@ -381,9 +375,6 @@ ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
             value_free(lVal);
             return rVal;
         }
-
-        lVal = unpackValue(ctx, lVal);
-        rVal = unpackValue(ctx, rVal);
 
         retVal = value_opOr(lVal, rVal);
         value_free(lVal); value_free(rVal);
@@ -414,9 +405,7 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 	prntStmt->children[1]->type == SYM_EXPR &&
 	prntStmt->children[2]->tok->type == TOKEN_NL) {
 		ExecValue *exprResult = execExpr(ctx, prntStmt->children[1]);
-        if (exprResult->type == TYPE_ERROR)
-            return exprResult;
-
+        
         exprResult = unpackValue(ctx, exprResult);
         if (exprResult->type == TYPE_ERROR)
             return exprResult;
@@ -535,11 +524,13 @@ ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
     if (whileStmt->type != SYM_WHILE)
         criticalError("ifstmt: Invalid symbol type, expected SYM_WHILE");
     ExecValue *expr = execExpr(ctx, whileStmt->children[1]);
+    expr = unpackValue(ctx, expr);
     if (expr->type == TYPE_ERROR)
         return expr;
-    while (value_falsiness(unpackValue(ctx, expr)) == 1){
+    while (value_falsiness(expr) == 1){
         execBlock(ctx, whileStmt->children[3]);
         expr = execExpr(ctx, whileStmt->children[1]);
+        expr = unpackValue(ctx, expr);
         if (expr->type == TYPE_ERROR)
             return expr;
     }
@@ -577,6 +568,7 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
         asmt->children[3]->tok->type == TOKEN_NL) {
         ExecValue *lvalue = execTerminal(ctx, asmt->children[0]);
         ExecValue *rvalue = execExpr(ctx, asmt->children[2]);
+        rvalue = unpackValue(ctx, rvalue);
 
         if (lvalue->type == TYPE_ERROR) {
             value_free(rvalue);
@@ -591,8 +583,6 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
         if (sym == NULL)
             context_addSymbol(ctx, lvalue);
 
-        rvalue = unpackValue(ctx, rvalue);
-        
         context_setSymbol(ctx, lvalue, rvalue);
         value_free(lvalue); value_free(rvalue);
         return value_newNull();

@@ -27,6 +27,15 @@ Error *parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *
     Token *tok = getToken(tokens, tokensLen, *curIdx);
 
     if (expectedTokenType != tok->type) {
+        // We use the PREVIOUS token if this one is a newline
+        size_t idx = *curIdx - 1;
+        while (tok->type == TOKEN_NL || tok->type == TOKEN_EOF) {
+            tok = getToken(tokens, tokensLen, idx);
+            idx--;
+            if (idx <= 0)
+                break;
+        }
+            
         Error *err = error_new(ERR_SYNTAX, tok->lineNum, tok->colNum);
         snprintf(err->message, MAX_ERRMSG_LEN, "Expected token %s, instead got %s.", TokenTypeString[expectedTokenType], TokenTypeString[tok->type]);
         return err;
