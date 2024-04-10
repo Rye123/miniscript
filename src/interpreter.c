@@ -11,6 +11,12 @@
 #include "executor/symboltable.h"
 #define LINE_MAX 1000
 
+void reportError(const char *msg)
+{
+    log_message(&consoleLogger, "\033[91m%s\033[0m\n", msg);
+    log_message(&executionLogger, "%s\n", msg);
+}
+
 void runLine(const char *source, Context *executionContext)
 {
     initErrorContext(source);
@@ -35,7 +41,7 @@ void runLine(const char *source, Context *executionContext)
         char errStr[MAX_ERRSTR_LEN];
         for (size_t i = 0; i < errorCount; i++) {
             error_string(errors[i], errStr, MAX_ERRSTR_LEN);
-            log_message(&consoleLogger, "%s\n", errStr);
+            reportError(errStr);
             error_free(errors[i]);
         }
         free(errors);
@@ -63,7 +69,7 @@ void runLine(const char *source, Context *executionContext)
     if (val->type == TYPE_ERROR) {
         char errStr[MAX_ERRSTR_LEN];
         error_string(val->value.error_ptr, errStr, MAX_ERRSTR_LEN);
-        log_message(&consoleLogger, "%s\n", errStr);
+        reportError(errStr);
     }
     value_free(val);
 
