@@ -11,13 +11,17 @@ Standard -- this is used by the executor
      STMT       -> EXPR_STMT | PRNT_STMT | IF_STMT | WHILE_STMT | BREAK | CONTINUE
      EXPR_STMT  -> EXPR EOL | EOL
      PRNT_STMT  -> print EXPR EOL | print EOL
-     IF_STMT    -> if EXPR then BLOCK ELSEIF_STMT end if
-     ELSEIF_STMT-> else if EXPR_STMT then BLOCK ELSEIF_STMT | 
-                   else if EXPR_STMT then BLOCK ELSE_STMT
-     ELSE_STMT  -> else BLOCK 
-     WHILE_STMT -> while EXPR then BLOCK end while
+     WHILE_STMT -> while EXPR EOL BLOCK end while EOL
      BREAK      -> break EOL
      CONTINUE   -> continue EOL
+     IF_STMT    -> if EXPR then EOL BLOCK ELSEIF_STMT end if EOL |
+                   if EXPR then EOL BLOCK ELSE_STMT   end if EOL |
+                   if EXPR then EOL BLOCK             end if EOL
+     ELSEIF_STMT-> else if EXPR then EOL BLOCK ELSEIF_STMT | 
+                   else if EXPR then EOL BLOCK ELSE_STMT   |
+                   else if EXPR then EOL BLOCK
+     ELSE_STMT  -> else EOL BLOCK 
+     BLOCK      -> LINE*
      EXPR       -> OR_EXPR | empty
 (LR) OR_EXPR    -> OR_EXPR or AND_EXPR | AND_EXPR
 (LR) AND_EXPR   -> AND_EXPR and LOG_UNARY | LOG_UNARY
@@ -37,13 +41,16 @@ ASMT         -> IDENTIFIER = EXPR EOL
 STMT         -> EXPR_STMT | PRNT_STMT | IF_STMT | WHILE_STMT | BREAK | CONTINUE
 EXPR_STMT    -> EXPR EOL | EOL
 PRNT_STMT    -> TOKEN_PRINT EXPR EOL | EOL
-IF_STMT      -> if EXPR_STMT then BLOCK ELSEIF_STMT end if
-ELSEIF_STMT  -> else if EXPR_STMT then BLOCK ELSEIF_STMT | 
-                else if EXPR_STMT then BLOCK ELSE_STMT
-ELSE_STMT    -> else BLOCK 
-WHILE_STMT   -> while EXPR then BLOCK end while
+WHILE_STMT   -> while EXPR EOL BLOCK end while EOL
 BREAK        -> break EOL
 CONTINUE     -> continue EOL
+IF_STMT      -> if EXPR then EOL BLOCK ELSEIF_STMT end if EOL |
+                if EXPR then EOL BLOCK ELSE_STMT   end if EOL |
+                if EXPR then EOL BLOCK             end if EOL
+ELSEIF_STMT  -> else if EXPR then EOL BLOCK ELSEIF_STMT | 
+                else if EXPR then EOL BLOCK ELSE_STMT   |
+                else if EXPR then EOL BLOCK
+ELSE_STMT  -> else EOL BLOCK 
 EXPR         -> OR_EXPR
 OR_EXPR      -> AND_EXPR OR_EXPR_R
 OR_EXPR_R    -> or OR_EXPR OR_EXPR_R | empty
