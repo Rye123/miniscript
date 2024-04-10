@@ -631,6 +631,36 @@ Error *parseWhile(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *cu
     return NULL;
 }
 
+Error *parseBreak(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseWhile", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_BREAK, NULL);
+    Error *err = NULL;
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_BREAK);
+    if (err)
+        return err;
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+    if (err)
+        return err;
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
+Error *parseContinue(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseContinue", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_CONTINUE, NULL);
+    Error *err = NULL;
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_CONTINUE);
+    if (err)
+        return err;
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+    if (err)
+        return err;
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
 Error *parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseStmt", tokens, curIdx);
@@ -643,6 +673,10 @@ Error *parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curI
         err = parseWhile(self, tokens, tokensLen, curIdx);
     else if (lookahead->type == TOKEN_IF)
         err = parseIfStmt(self, tokens, tokensLen, curIdx);
+    else if (lookahead->type == TOKEN_BREAK)
+        err = parseBreak(self, tokens, tokensLen, curIdx);
+    else if (lookahead->type == TOKEN_CONTINUE)
+        err = parseContinue(self, tokens, tokensLen, curIdx);
     else
 	    err = parseExprStmt(self, tokens, tokensLen, curIdx);
 

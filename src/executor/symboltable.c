@@ -14,6 +14,7 @@ Context *context_new(Context *parent, Context *global)
     ctx->parent = parent;
     ctx->symbols = malloc(0);
     ctx->symbolCount = 0;
+    ctx->hasBreakOrContinue = 0;
     return ctx;
 }
 
@@ -92,7 +93,7 @@ ExecValue *value_clone(ExecValue *value)
     switch (value->type) {
     case TYPE_STRING: return value_newString(value->value.literal_str, value->tok);
     case TYPE_NUMBER: return value_newNumber(value->value.literal_num, value->tok);
-    case TYPE_NULL: return value_newNull(value->tok);
+    case TYPE_NULL: return value_newNull();
     case TYPE_IDENTIFIER: return value_newIdentifier(value->value.identifier_name, value->tok);
     case TYPE_ERROR: return value_newError(value->value.error_ptr, value->tok);
     default:

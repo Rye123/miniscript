@@ -533,7 +533,26 @@ ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
         expr = unpackValue(ctx, expr);
         if (expr->type == TYPE_ERROR)
             return expr;
+        if (ctx->hasBreakOrContinue == 1){
+            ctx->hasBreakOrContinue = 0;
+            break;
+        } else if (ctx->hasBreakOrContinue == 2)
+            ctx->hasBreakOrContinue = 0;
     }
+    return value_newNull();
+}
+
+ExecValue *execBreak(Context* ctx, ASTNode *breakStmt){
+    if (breakStmt->type != SYM_BREAK)
+        criticalError("ifstmt: Invalid symbol type, expected SYM_BREAK");
+    ctx->hasBreakOrContinue = 1;
+    return value_newNull();
+}
+
+ExecValue *execContinue(Context* ctx, ASTNode *breakStmt){
+    if (breakStmt->type != SYM_CONTINUE)
+        criticalError("ifstmt: Invalid symbol type, expected SYM_CONTINUE");
+    ctx->hasBreakOrContinue = 2;
     return value_newNull();
 }
 
@@ -541,13 +560,21 @@ ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 {
     if (stmt->type != SYM_STMT)
         criticalError("stmt: Invalid symbol type, expected SYM_STMT");
+    if (ctx->hasBreakOrContinue)
+        return value_newNull();
 	if (stmt->numChildren == 1) {
 		if (stmt->children[0]->type == SYM_EXPR_STMT)
 			return execExprStmt(ctx, stmt->children[0]);
 		if (stmt->children[0]->type == SYM_PRNT_STMT)
 			return execPrntStmt(ctx, stmt->children[0]);
-		if (stmt->children[0]->type == SYM_IFSTMT){
+		if (stmt->children[0]->type == SYM_IFSTMT)
 			return execIfStmt(ctx, stmt->children[0]);
+		if (stmt->children[0]->type == SYM_BREAK)
+			return execBreak(ctx, stmt->children[0]);
+        if (stmt->children[0]->type == SYM_CONTINUE)
+			return execContinue(ctx, stmt->children[0]);
+		if (stmt->children[0]->type == SYM_WHILE){
+			return execWhileStmt(ctx, stmt->children[0]);
 		}
 		if (stmt->children[0]->type == SYM_WHILE){
 			return execWhileStmt(ctx, stmt->children[0]);
@@ -561,6 +588,8 @@ ExecValue *execAsmt(Context* ctx, ASTNode *asmt)
 {
     if (asmt->type != SYM_ASMT)
         criticalError("asmt: Invalid symbol type, expected SYM_ASMT");
+    if (ctx->hasBreakOrContinue)
+        return value_newNull();
     if (asmt->numChildren == 4 &&
         asmt->children[0]->tok->type == TOKEN_IDENTIFIER &&
         asmt->children[1]->tok->type == TOKEN_EQUAL &&
@@ -595,6 +624,8 @@ ExecValue *execLine(Context* ctx, ASTNode *line)
 {
     if (line->type != SYM_LINE)
         criticalError("line: Invalid symbol type, expected SYM_LINE");
+    if (ctx->hasBreakOrContinue)
+        return value_newNull();
     if (line->numChildren == 1) {
         if (line->children[0]->type == SYM_ASMT)
             return execAsmt(ctx, line->children[0]);
