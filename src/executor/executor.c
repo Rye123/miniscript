@@ -437,17 +437,23 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 		
 		switch (exprResult->type) {
 			case TYPE_IDENTIFIER:
-				printf("ERROR: Identifier value was another identifier\n");
+				log_message(&executionLogger,"ERROR: Identifier value was another identifier\n");
 				exit(1);
 				break;
 				case TYPE_STRING:
-				printf("%s\n", exprResult->value.literal_str);
+                    log_message(&consoleLogger,"%s\n", exprResult->value.literal_str);
+                log_message(&executionLogger,"%s\n", exprResult->value.literal_str);
+                log_message(&resultLogger,"%s\n", exprResult->value.literal_str);
 				break;
 			case TYPE_NUMBER:
-				printf("%f\n", exprResult->value.literal_num);
+                log_message(&consoleLogger,"%f\n", exprResult->value.literal_num);
+                log_message(&executionLogger,"%f\n", exprResult->value.literal_num);
+				log_message(&resultLogger,"%f\n", exprResult->value.literal_num);
 				break;
 			case TYPE_NULL:
-				printf("(null)\n");
+                log_message(&consoleLogger,"(null)\n");
+                log_message(&executionLogger,"(null)\n");
+				log_message(&resultLogger,"(null)\n");
 				break;
 			}
 		value_free(exprResult);

@@ -12,7 +12,7 @@
 
 void runLine(const char *source, Context *executionContext)
 {
-    log_message(&executionLogger, "Input: %s\n", source);
+    log_message(&executionLogger, "Input:\n%s\n", source);
 
     // Lexical Analysis
     // 1. Initialisation
@@ -92,6 +92,10 @@ void runREPL()
         log_message(&consoleLogger, ">> ");
         if (fgets(buffer, LINE_MAX, stdin) == NULL)
             break;
+
+        if (strcmp(buffer, "exit\n") == 0) {
+            break;
+        }
 
         runLine(buffer, globalCtx);
         log_message(&executionLogger, "\n\n");
