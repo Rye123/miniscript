@@ -25,7 +25,7 @@ Standard -- this is used by the executor
      BLOCK      -> LINE*
      EXPR       -> OR_EXPR | FN_EXPR | empty
      FN_EXPR    -> function ( ARG_LIST ) EOL BLOCK end function
-     ARG_LIST   -> ARG,*
+     ARG_LIST   -> ARG,* ARG
      ARG        -> IDENTIFIER | IDENTIFIER = STRING | IDENTIFIER = NUMBER | IDENTIFIER = NULL
 (LR) OR_EXPR    -> OR_EXPR or AND_EXPR | AND_EXPR
 (LR) AND_EXPR   -> AND_EXPR and LOG_UNARY | LOG_UNARY
@@ -36,7 +36,9 @@ Standard -- this is used by the executor
 (LR) TERM       -> TERM * UNARY | TERM / UNARY | TERM % UNARY | UNARY
 (RR) UNARY      -> +UNARY | -UNARY | POWER
 (RR) POWER      -> PRIMARY ^ UNARY | PRIMARY
-     PRIMARY    -> TERMINAL | ( EXPR )
+     PRIMARY    -> TERMINAL | ( EXPR ) | FN_CALL
+     FN_CALL    -> IDENTIFIER ( FN_ARGS )
+     FN_ARGS    -> EXPR,* EXPR
      TERMINAL   -> IDENTIFIER | STRING | NUMBER | NULL
 
 Left-Recursion Fixed -- this is used by the parser, then converted to the above afterwards to re-introduce left-recursion
@@ -59,7 +61,7 @@ ELSEIF_STMT  -> else if EXPR then EOL BLOCK ELSEIF_STMT |
 ELSE_STMT    -> else EOL BLOCK 
 EXPR         -> OR_EXPR | FN_EXPR | empty
 FN_EXPR      -> function ( ARG_LIST ) EOL BLOCK end function EOL
-ARG_LIST     -> ARG,*
+ARG_LIST     -> ARG,* ARG
 ARG          -> IDENTIFIER | IDENTIFIER = STRING | IDENTIFIER = NUMBER | IDENTIFIER = NULL
 OR_EXPR      -> AND_EXPR OR_EXPR_R
 OR_EXPR_R    -> or OR_EXPR OR_EXPR_R | empty
@@ -82,7 +84,9 @@ TERM         -> UNARY TERM_R
 TERM_R       -> * TERM TERM_R | / TERM TERM_R | % TERM TERM_R | empty
 UNARY        -> +UNARY | -UNARY | POWER
 POWER        -> PRIMARY ^ UNARY | PRIMARY
-PRIMARY      -> TERMINAL | ( EXPR )
+PRIMARY      -> TERMINAL | ( EXPR ) | FN_CALL
+FN_CALL      -> IDENTIFIER ( FN_ARGS ) | TERMINAL
+FN_ARGS      -> EXPR,* EXPR
 TERMINAL     -> IDENTIFIER | STRING | NUMBER | NULL
  **/
 
@@ -101,7 +105,9 @@ typedef enum {
     SYM_COMPARISON, SYM_COMPARISON_R,
     SYM_SUM, SYM_SUM_R,
     SYM_TERM, SYM_TERM_R,
-    SYM_UNARY, SYM_POWER, SYM_PRIMARY, SYM_TERMINAL,
+    SYM_UNARY, SYM_POWER, SYM_PRIMARY,
+    SYM_FN_CALL, SYM_FN_ARGS,
+    SYM_TERMINAL,
 } SymbolType;
 
 static const char* SymbolTypeString[] = {
@@ -119,7 +125,9 @@ static const char* SymbolTypeString[] = {
     "SYM_COMPARISON", "SYM_COMPARISON_R",
     "SYM_SUM", "SYM_SUM_R",
     "SYM_TERM", "SYM_TERM_R",
-    "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY", "SYM_TERMINAL",
+    "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY",
+    "SYM_FN_CALL", "SYM_FN_ARGS",
+    "SYM_TERMINAL",
 };
 
 

@@ -38,6 +38,8 @@ Error* parseTermR(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cur
 Error* parseUnary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parsePower(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseFnCall(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
+Error* parseFnArgs(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 Error* parseTerminal(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx, TokenType expectedTokenType);
 Error* parseLine(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx);
 
