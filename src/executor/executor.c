@@ -451,9 +451,9 @@ ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
 				log_message(&resultLogger,"%f\n", exprResult->value.literal_num);
 				break;
 			case TYPE_NULL:
-                log_message(&consoleLogger,"(null)\n");
-                log_message(&executionLogger,"(null)\n");
-				log_message(&resultLogger,"(null)\n");
+                log_message(&consoleLogger,"null\n");
+                log_message(&executionLogger,"null\n");
+				log_message(&resultLogger,"null\n");
 				break;
 			}
 		value_free(exprResult);
