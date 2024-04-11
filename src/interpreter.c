@@ -32,6 +32,12 @@ void transition(FSM *fsm, int success) {
             case LEXING_ERROR:
                 fsm->current_state = CLEANING;
                 break;
+            case PARSING:
+                fsm->current_state = PARSING_ERROR;
+                break;
+            case PARSING_ERROR:
+                fsm->current_state = CLEANING;
+                break;
             default:
                 fsm->current_state = CLEANING;
                 break;
@@ -115,6 +121,19 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 log_message(&executionLogger, "\n");
 
                 if (parseError != NULL) {
+                    transition(&fsm, !success);
+                    break;
+                }
+
+                log_message(&executionLogger, "\n--- AST ---\n");
+                astnode_gen(root);
+                astnode_print(root);
+                log_message(&executionLogger, "\n");
+                transition(&fsm, success);
+                break;
+            case PARSING_ERROR:
+                printf("PARSING ERROR\n");
+                if (parseError != NULL) {
                     if (parseError->type == ERR_SYNTAX_EOF && asREPL) {
                         // Only ask for more input if this is in REPL mode.
                         error_free(parseError);
@@ -128,14 +147,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                     astnode_free(root);
                     return 0;
                 }
-
-                log_message(&executionLogger, "\n--- AST ---\n");
-                astnode_gen(root);
-                astnode_print(root);
-                log_message(&executionLogger, "\n");
-
-                transition(&fsm, success);
-                break;
             case EXECUTING:
                 printf("EXECUTING\n");
                 // 3. Execution

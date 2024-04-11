@@ -21,6 +21,7 @@ typedef enum {
     PARSING,
     EXECUTING,
     LEXING_ERROR,
+    PARSING_ERROR,
     CLEANING,
 } State;
 

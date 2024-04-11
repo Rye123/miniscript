@@ -308,7 +308,6 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             } else {
                 // Unknown
                 tokType = TOKEN_UNKNOWN;
-                printf("ZERO0\n");
                 sprintf(errMsg, "Unexpected character %c", lookahead);
                 lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd++; colNum++;
@@ -386,7 +385,6 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             } else {
                 // Unknown
                 tokType = TOKEN_UNKNOWN;
-                printf("ZERO\n");
                 sprintf(errMsg, "Unexpected character %c", lookahead);
                 lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd++; colNum++;
@@ -402,11 +400,8 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
             (*tokensPtr)[*(tokenCount) - 1] = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
         }
-
         lexStart = lexEnd;
         free(errMsg);
-
-        printf("ONE\n");
     }
 
     // Add NL token, if it doesn't already end with one
@@ -424,5 +419,4 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
 
     // Add EOF token
     (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum+1, 0);
-    printf("TWO\n");
 }
