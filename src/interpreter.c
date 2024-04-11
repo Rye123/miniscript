@@ -91,7 +91,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 transition(&fsm, success);
                 break;
             case LEXING:
-                printf("LEXING\n");
                 lex((const Token ***) &tokens, &tokenCount, source, &lexResult);
 
                 log_message(&executionLogger, "--- LEXING RESULT ---\n");
@@ -102,7 +101,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 transition(&fsm, !lexResult.hasError);
                 break;
             case LEXING_ERROR:
-                printf("LEXING_ERROR\n");
                 if (lexResult.hasError) {
                     lexError(lexResult.errorMessage, lexResult.lineNum, lexResult.colNum, (const Error ***) &errors, &errorCount);
                 }
@@ -120,8 +118,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 transition(&fsm, success);
                 break;
             case PARSING:
-                printf("PARSING\n");
-
                 parseError = parse(root, tokens, tokenCount);
                 log_message(&executionLogger, "\n--- PARSE TREE ---\n");
                 astnode_print(root);
@@ -146,14 +142,12 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 transition(&fsm, success);
                 break;
             case PARSING_ERROR:
-                printf("PARSING ERROR\n");
                 error_string(parseError, errStr, MAX_ERRSTR_LEN);
                 reportError(errStr);
 
                 transition(&fsm, success);
                 break;
             case EXECUTING:
-                printf("EXECUTING\n");
                 log_message(&executionLogger, "\n--- EXECUTION RESULT ---\n");
                 val = execStart(executionContext, root);
 
@@ -166,7 +160,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 transition(&fsm, success);
                 break;
             case EXECUTING_ERROR:
-                printf("EXECUTING ERROR\n");
                 error_string(val->value.error_ptr, errStr, MAX_ERRSTR_LEN);
                 reportError(errStr);
                 value_free(val);
@@ -179,7 +172,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
     }
 
     if (fsm.current_state == CLEANING) {
-        printf("CLEANING\n");
         // 4. Clean up
         astnode_free(root);
         for (size_t i = 0; i < tokenCount; i++)
