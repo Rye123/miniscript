@@ -138,7 +138,7 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
     }
     return lexEnd;
 }
-void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source)
+int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source)
 {
     size_t srcLen = strlen(source);
     int lineNum = 0;
@@ -408,4 +408,6 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr,
 
     // Add EOF token
     (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum+1, 0);
+
+    return 1;
 }

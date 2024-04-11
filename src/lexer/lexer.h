@@ -13,5 +13,5 @@ Performs lexical analysis on `source`, storing the tokens in the array `*(tokens
 - `tokenCount`: Takes the ADDRESS of the size of that array.
 - `source`: Takes a string of source code.
 */
-void lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source);
+int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source);
 #endif
