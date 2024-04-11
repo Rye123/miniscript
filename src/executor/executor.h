@@ -36,7 +36,7 @@ ExecValue* execTerm(Context* ctx, ASTNode *term);
 ExecValue* execUnary(Context* ctx, ASTNode *unary);
 ExecValue* execPower(Context* ctx, ASTNode *power);
 ExecValue* execPrimary(Context* ctx, ASTNode *primary);
-ExecValue* execFnCall(Context* ctx, ASTNode *fnCall);
+ExecValue* execFnCall(Context* ctx, ASTNode *fnCall); // doesn't work in REPL mode -- the tokens, AST are discarded for the next run, which removes the function call
 ExecValue* execFnArgs(Context* ctx, ASTNode *fnArgs);
 ExecValue* execTerminal(Context* ctx, ASTNode *terminal);
 

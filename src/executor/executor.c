@@ -711,7 +711,7 @@ ExecValue *execElse(Context* ctx, ASTNode *elseStmt){
 	if (elseStmt->numChildren == 3)
 		return execBlock(ctx, elseStmt->children[2]);
 	else
-		criticalError("execElse: Invalid line.");
+		criticalError("execElse: Invalid else.");
 
     return value_newNull();
 }
@@ -884,8 +884,9 @@ ExecValue *execLine(Context* ctx, ASTNode *line)
             return execAsmt(ctx, line->children[0]);
         if (line->children[0]->type == SYM_STMT)
             return execStmt(ctx, line->children[0]);
+        criticalError("line: Line has invalid children.");
     }
-    criticalError("line: Invalid line.");
+    criticalError("line: Expected line to have 1 child.");
     return NULL;
 }
 

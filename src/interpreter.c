@@ -154,7 +154,7 @@ void runREPL()
         // Store existing buffer data into source
         size_t bufSz = strnlen(buffer, LINE_MAX);
         if (bufSz > (REPL_BUF_MAX - sourceSz))
-            criticalError("Too much input in REPL buffer, increasing REPL_BUF_MAX.");
+            criticalError("Too much input in REPL buffer, increase REPL_BUF_MAX.");
         
         strncpy(source + sourceSz, buffer, bufSz);
         sourceSz += bufSz;
