@@ -38,10 +38,10 @@ typedef enum {
 static const char *ErrorTypeString[] = {
     "Tokenization Error", // original Lexer Error
     "Syntax Error",       // original Compiler Error
-    "Unexpected EOF Error",
+    "Syntax Error - Unexpected EOF",
     "Runtime Error",
-    "Type Error",
-    "Undefined Identifier"
+    "Runtime Error - Type",
+    "Runtime Error - Undefined Identifier"
 };
 
 typedef struct {

@@ -38,6 +38,12 @@ void transition(FSM *fsm, int success) {
             case PARSING_ERROR:
                 fsm->current_state = CLEANING;
                 break;
+            case EXECUTING:
+                fsm->current_state = EXECUTING_ERROR;
+                break;
+            case EXECUTING_ERROR:
+                fsm->current_state = CLEANING;
+                break;
             default:
                 fsm->current_state = CLEANING;
                 break;
@@ -60,8 +66,10 @@ int runLine(const char *source, Context *executionContext, int asREPL)
     size_t errorCount;
     Token **tokens;
     Error **errors;
+    char errStr[MAX_ERRSTR_LEN];
     ASTNode *root;
     LexResult lexResult;
+    ExecValue *val;
     Error *parseError;
 
     initFSM(&fsm);
@@ -84,7 +92,6 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 break;
             case LEXING:
                 printf("LEXING\n");
-                // 1. Lexing
                 lex((const Token ***) &tokens, &tokenCount, source, &lexResult);
 
                 log_message(&executionLogger, "--- LEXING RESULT ---\n");
@@ -114,13 +121,20 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 break;
             case PARSING:
                 printf("PARSING\n");
-                // 2. Syntactic Analysis
+
                 parseError = parse(root, tokens, tokenCount);
                 log_message(&executionLogger, "\n--- PARSE TREE ---\n");
                 astnode_print(root);
                 log_message(&executionLogger, "\n");
 
                 if (parseError != NULL) {
+                    if (parseError->type == ERR_SYNTAX_EOF && asREPL) {
+                        // Only ask for more input if this is in REPL mode.
+                        error_free(parseError);
+                        astnode_free(root);
+                        return 1;
+                    }
+
                     transition(&fsm, !success);
                     break;
                 }
@@ -133,30 +147,28 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 break;
             case PARSING_ERROR:
                 printf("PARSING ERROR\n");
-                if (parseError != NULL) {
-                    if (parseError->type == ERR_SYNTAX_EOF && asREPL) {
-                        // Only ask for more input if this is in REPL mode.
-                        error_free(parseError);
-                        astnode_free(root);
-                        return 1;
-                    }
-                    char errStr[MAX_ERRSTR_LEN];
-                    error_string(parseError, errStr, MAX_ERRSTR_LEN);
-                    reportError(errStr);
-                    error_free(parseError);
-                    astnode_free(root);
-                    return 0;
-                }
+                error_string(parseError, errStr, MAX_ERRSTR_LEN);
+                reportError(errStr);
+
+                transition(&fsm, success);
+                break;
             case EXECUTING:
                 printf("EXECUTING\n");
-                // 3. Execution
                 log_message(&executionLogger, "\n--- EXECUTION RESULT ---\n");
-                ExecValue *val = execStart(executionContext, root);
+                val = execStart(executionContext, root);
+
                 if (val->type == TYPE_ERROR) {
-                    char errStr[MAX_ERRSTR_LEN];
-                    error_string(val->value.error_ptr, errStr, MAX_ERRSTR_LEN);
-                    reportError(errStr);
+                    transition(&fsm, !success);
+                    break;
                 }
+                value_free(val);
+
+                transition(&fsm, success);
+                break;
+            case EXECUTING_ERROR:
+                printf("EXECUTING ERROR\n");
+                error_string(val->value.error_ptr, errStr, MAX_ERRSTR_LEN);
+                reportError(errStr);
                 value_free(val);
 
                 transition(&fsm, success);
