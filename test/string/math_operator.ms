@@ -1,6 +1,7 @@
 str1 = "apple"
 str2 = "banana"
 
+print str1 + 1 // expect: apple1
 print str1 + str2 // expect: applebanana
 print str1 * 3 // expect: appleappleapple
 print str1 * 0.6 // expect: app
