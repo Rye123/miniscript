@@ -608,6 +608,7 @@ ExecValue *execExpr(Context* ctx, ASTNode *expr)
     else if(expr->children[0]->type == SYM_FN_EXPR)
         return execFnExpr(ctx, expr->children[0]);
     criticalError("expr: Expected a child.");
+    return NULL;
 }
 
 ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
@@ -679,7 +680,9 @@ ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
 ExecValue *execReturn(Context *ctx, ASTNode *ret)
 {
     if (ret->type != SYM_RETURN)
-        criticalError("return: Invalid symbol type, expeected SYM_RETURN");
+        criticalError("return: Invalid symbol type, expected SYM_RETURN");
+
+    ctx->hasReturn = 1;
 
     if (ret->numChildren == 2)
         return value_newNull();
@@ -692,13 +695,18 @@ ExecValue *execReturn(Context *ctx, ASTNode *ret)
 
 ExecValue *execBlock(Context* ctx, ASTNode *block)
 {
+    if (block->type != SYM_BLOCK)
+        criticalError("block: Invalid symbol type, expected SYM_BLOCK");
+    
 	for (int i = 0; i < block->numChildren; i++){
-        if (block->children[i]->type == SYM_RETURN)
-            return execReturn(ctx, block->children[i]);
-        
-		ExecValue *result = execLine(ctx, block->children[i]);
+        ExecValue *result = execLine(ctx, block->children[i]);
         if (result->type == TYPE_ERROR)
             return result;
+
+        if (ctx->hasReturn) {
+            result = unpackValue(ctx, result);
+            return result;
+        }
         value_free(result);
 	}
 	return value_newNull();

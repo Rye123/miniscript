@@ -45,7 +45,8 @@ typedef struct _context {
     size_t argCount;           // Number of arguments in this context.
     ExecSymbol** symbols;      // Symbols defined in this context. 
     size_t symbolCount;
-    int hasBreakOrContinue; // True if it is exiting break
+    int hasBreakOrContinue;    // True if it is exiting break
+    int hasReturn;             // True if has return
 } Context;
 
 // Defines a new context. The global context would have parent = NULL and global = NULL.
