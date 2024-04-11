@@ -74,7 +74,17 @@ Error *parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
         }
         break;
     }
-    case TOKEN_IDENTIFIER:
+    case TOKEN_IDENTIFIER: {
+        Token *lookahead2 = getToken(tokens, tokensLen, *curIdx + 1);
+        if (lookahead2->type == TOKEN_PAREN_L) {
+            Error *err = parseFnCall(self, tokens, tokensLen, curIdx);
+            if (err) {
+                astnode_free(self);
+                return err;
+            }
+            break;
+        }
+    }
     case TOKEN_STRING:
     case TOKEN_NUMBER:
     case TOKEN_NULL:
@@ -92,6 +102,59 @@ Error *parsePrimary(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
     }
     }
 
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
+Error *parseFnCall(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseFnCall", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_FN_CALL, NULL);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    Token *lookahead2 = getToken(tokens, tokensLen, *curIdx + 1);
+    Error *err = NULL;
+    if (lookahead->type != TOKEN_IDENTIFIER || lookahead2->type != TOKEN_PAREN_L) {
+        err = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
+        snprintf(err->message, MAX_ERRMSG_LEN, "Expecting a function call.");
+        astnode_free(self);
+        return err;
+    }
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IDENTIFIER);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_L);
+    err = parseFnArgs(self, tokens, tokensLen, curIdx);
+    if (err) {
+        astnode_free(self);
+        return err;
+    }
+    lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type != TOKEN_PAREN_R) {
+        err = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
+        snprintf(err->message, MAX_ERRMSG_LEN, "Expected function call to end with right parentheses.");
+        astnode_free(self);
+        return err;
+    }
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_R);
+    astnode_print(self);
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
+Error *parseFnArgs(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseFnArgs", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_FN_ARGS, NULL);
+    Error *err;
+    
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    while (lookahead->type != TOKEN_PAREN_R) {
+        err = parseExpr(self, tokens, tokensLen, curIdx);
+        if (err) {
+            astnode_free(self);
+            return err;
+        }
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_COMMA);
+        lookahead = getToken(tokens, tokensLen, *curIdx);
+    }
     astnode_addChildNode(parent, self);
     return NULL;
 }
@@ -395,11 +458,177 @@ Error *parseOrExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
     return NULL;
 }
 
+Error* parseArg(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseArg", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_ARG, NULL);
+    Token *lookahead2 = getToken(tokens, tokensLen, *curIdx + 1);
+    Error *err = NULL;
+    if (lookahead2->type == TOKEN_EQUAL) {
+        // IDENTIFIER = STRING or NUMBER or NULL
+        err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IDENTIFIER);
+        if (err) {
+            astnode_free(self);
+            return err;
+        }
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_EQUAL);
+        Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+        switch (lookahead->type) {
+        case TOKEN_STRING: parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_STRING); break;
+        case TOKEN_NUMBER: parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NUMBER); break;
+        case TOKEN_NULL: parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NULL); break;
+        default:
+            // error
+            err = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
+            snprintf(err->message, MAX_ERRMSG_LEN, "Invalid function parameter definition, should be \"arg\" or \"arg = value\", where value is a string, number or null.");
+            astnode_free(self);
+            return err;
+            break;
+        }
+    } else {
+        // IDENTIFIER
+        err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_IDENTIFIER);
+        if (err) {
+            astnode_free(self);
+            return err;
+        }
+    }
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
+Error* parseArgList(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseArgList", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_ARG_LIST, NULL);
+    Error *err;
+    
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    while (lookahead->type != TOKEN_PAREN_R) {
+        err = parseArg(self, tokens, tokensLen, curIdx);
+        if (err) {
+            astnode_free(self);
+            return err;
+        }
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_COMMA);
+        lookahead = getToken(tokens, tokensLen, *curIdx);
+    }
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
+Error *parseReturn(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseReturn", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_RETURN, NULL);
+    Error *err = NULL;
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_RETURN);
+    if (err) {
+        astnode_free(self);
+        return err;
+    }
+
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    if (lookahead->type != TOKEN_NL) {
+        err = parseExpr(self, tokens, tokensLen, curIdx);
+        if (err) {
+            astnode_free(self);
+            return err;
+        }
+    }
+    
+    err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+    if (err) {
+        astnode_free(self);
+        return err;
+    }
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
+Error* parseFnExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
+{
+    printParse("parseFnExpr", tokens, curIdx);
+    ASTNode *self = astnode_new(SYM_FN_EXPR, NULL);
+    Error *err = NULL;
+
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    Token *lookahead2 = getToken(tokens, tokensLen, *curIdx + 1);
+
+    // Parse function(
+    if (lookahead->type != TOKEN_FUNCTION || lookahead2->type != TOKEN_PAREN_L) {
+        printf("%s, %s\n", TokenTypeString[lookahead->type], TokenTypeString[lookahead2->type]);
+        Error *fnError = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
+        snprintf(fnError->message, MAX_ERRMSG_LEN, "Function definition should start with \"function\" and left parentheses: function(arg1, arg2, ...)");
+        astnode_free(self);
+        return fnError;
+    }
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_FUNCTION);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_L);
+
+    // Parse arg list
+    err = parseArgList(self, tokens, tokensLen, curIdx);
+    if (err)
+        return err;
+
+    // Parse )\n
+    lookahead = getToken(tokens, tokensLen, *curIdx);
+    lookahead2 = getToken(tokens, tokensLen, *curIdx + 1);
+    if (lookahead->type != TOKEN_PAREN_R || lookahead2->type != TOKEN_NL) {
+        Error *fnError = getParseError(ERR_SYNTAX, tokens, tokensLen, curIdx);
+        snprintf(fnError->message, MAX_ERRMSG_LEN, "Function definition should end with right parentheses and a new line: function(arg1, arg2, ...)");
+        astnode_free(self);
+        return fnError;
+    }
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_R);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_NL);
+
+    // Parse Block
+    ASTNode *block = astnode_new(SYM_BLOCK, NULL);
+    lookahead = getToken(tokens, tokensLen, *curIdx);
+    while (lookahead->type != TOKEN_END) {
+        if (lookahead->type == TOKEN_EOF) {
+            Error *eofError = getParseError(ERR_SYNTAX_EOF, tokens, tokensLen, curIdx);
+            snprintf(eofError->message, MAX_ERRMSG_LEN, "Function block not terminated with \"end function\".");
+            astnode_free(self);
+            astnode_free(block);
+            return eofError;
+        }
+        Error *lineErr = parseLine(block, tokens, tokensLen, curIdx);
+        if (lineErr)
+            return lineErr;
+        lookahead = getToken(tokens, tokensLen, *curIdx);
+    }
+    astnode_addChildNode(self, block);
+
+    // End
+    lookahead = getToken(tokens, tokensLen, *curIdx);
+    lookahead2 = getToken(tokens, tokensLen, *curIdx + 1);
+    if (lookahead->type != TOKEN_END || lookahead2->type != TOKEN_FUNCTION) {
+        Error *eofError = getParseError(ERR_SYNTAX_EOF, tokens, tokensLen, curIdx);
+        snprintf(eofError->message, MAX_ERRMSG_LEN, "Function block not terminated with \"end function\"");
+        astnode_free(self);
+        astnode_free(block);
+    }
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_END);
+    parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_FUNCTION);
+
+    astnode_addChildNode(parent, self);
+    return NULL;
+}
+
 Error *parseExpr(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseExpr", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_EXPR, NULL);
-    Error *err = parseOrExpr(self, tokens, tokensLen, curIdx);
+    Token *lookahead = getToken(tokens, tokensLen, *curIdx);
+    Error *err = NULL;
+
+    if (lookahead->type == TOKEN_FUNCTION)
+        err = parseFnExpr(self, tokens, tokensLen, curIdx);
+    else
+        err = parseOrExpr(self, tokens, tokensLen, curIdx);
+    
     if (err)
         return err;
     astnode_addChildNode(parent, self);
@@ -661,7 +890,7 @@ Error *parseBreak(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *cu
     return NULL;
 }
 
-Error *parseContinue(ASTNode *parent, Token ** tokens, size_t tokensLen, size_t *curIdx)
+Error *parseContinue(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseContinue", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_CONTINUE, NULL);
@@ -692,6 +921,8 @@ Error *parseStmt(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curI
         err = parseBreak(self, tokens, tokensLen, curIdx);
     else if (lookahead->type == TOKEN_CONTINUE)
         err = parseContinue(self, tokens, tokensLen, curIdx);
+    else if (lookahead->type == TOKEN_RETURN)
+        err = parseReturn(self, tokens, tokensLen, curIdx);
     else
 	    err = parseExprStmt(self, tokens, tokensLen, curIdx);
 

@@ -8,10 +8,17 @@ typedef enum {
     TYPE_STRING,
     TYPE_NULL,
     TYPE_IDENTIFIER,
-    TYPE_ERROR
+    TYPE_FUNCTION,
+    TYPE_ERROR,
+    TYPE_UNASSIGNED
 } ValueType;
 
-static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER", "TYPE_ERROR"};
+static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER", "TYPE_FUNCTION", "TYPE_ERROR", "TYPE_UNASSIGNED"};
+
+typedef struct {
+    ASTNode* argList;
+    ASTNode* fnBlk;
+} FunctionRef;
 
 typedef struct {
     ValueType type;
@@ -20,6 +27,7 @@ typedef struct {
         double literal_num;
         char* literal_str;
         char* identifier_name;
+        FunctionRef* function_ref;
         Error* error_ptr;
     } value;
     Token* tok; // Used to add context for the ExecValue
@@ -29,14 +37,16 @@ typedef struct {
 typedef struct {
     char* symbolName;
     ExecValue*  value;
-} ExecSymbol;  
+} ExecSymbol;
 
 typedef struct _context {
-    struct _context *global;  // Points to the global scope/context
-    struct _context *parent;  // Points to the parent scope/context
+    struct _context *global;   // Points to the global scope/context
+    struct _context *parent;   // Points to the parent scope/context
+    size_t argCount;           // Number of arguments in this context.
     ExecSymbol** symbols;      // Symbols defined in this context. 
     size_t symbolCount;
-    int hasBreakOrContinue; // True if it is exiting break
+    int hasBreakOrContinue;    // True if it is exiting break
+    int hasReturn;             // True if has return
 } Context;
 
 // Defines a new context. The global context would have parent = NULL and global = NULL.
@@ -51,6 +61,7 @@ ExecValue* value_newString(char* strValue, Token* tokPtr);
 ExecValue* value_newNumber(double numValue, Token* tokPtr);
 ExecValue* value_newIdentifier(char *identifierName, Token* tokPtr);
 ExecValue* value_newError(Error *err, Token* tokPtr);
+ExecValue* value_newFunction(ASTNode* argList, ASTNode* block, Token* tokPtr);
 
 // Clones an ExecValue
 ExecValue* value_clone(ExecValue *val);

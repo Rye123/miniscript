@@ -35,9 +35,9 @@ void astnode_print(ASTNode *node)
         if (node->tok->type == TOKEN_NL)
             log_message(&executionLogger, "%s(%s('\\n'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
         else if(node->tok->type == TOKEN_PAREN_L)
-            log_message(&executionLogger, "%s( )", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
+            log_message(&executionLogger, "%s(%s())", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
         else if(node->tok->type == TOKEN_PAREN_R)
-            log_message(&executionLogger, "%s( )", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
+            log_message(&executionLogger, "%s(%s())", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
         else
             log_message(&executionLogger, "%s(%s('%s'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type], node->tok->lexeme);
         return;
@@ -263,7 +263,9 @@ void _astnode_left_skew_rec(ASTNode *node)
     }
     switch (node->type) {
     case SYM_EXPR:
-        _astnode_left_skew(node, SYM_OR_EXPR);
+        // Children could be OR_EXPR, or FN_EXPR
+        if (node->children[0]->type == SYM_OR_EXPR)
+            _astnode_left_skew(node, SYM_OR_EXPR);
         break;
     case SYM_OR_EXPR:
         _astnode_left_skew(node, SYM_AND_EXPR);
