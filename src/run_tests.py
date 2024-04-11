@@ -17,23 +17,15 @@ if __name__ == "__main__":
     executable = executable.resolve()
 
     # Loop through directories
-    for tests in testdir.iterdir():
-        if not tests.is_dir():
-            continue
-
-        for test in tests.iterdir():
-            if not test.is_file():
-                continue
-            if not test.suffix == ".ms":
-                continue
-            test_file = test.resolve()
-            print(f"~~~ test {str(test.resolve().parent.stem)}/{str(test.resolve().stem)} ~~~")
+    for test_file in testdir.rglob('*.ms'):
+        if test_file.is_file():
+            print(f"~~~ test {test_file.parent.stem}/{test_file.stem} ~~~")
             if show_contents:
                 print("Contents:")
-                print(test.read_text())
+                print(test_file.read_text())
                 print("---")
-            out = subprocess.run([str(executable), str(test_file)], capture_output=True).stdout
+            out = subprocess.run([str(executable), str(test_file.resolve())], capture_output=True).stdout
             print(out.decode())
             print("\n~~~\n")
 
-        print("Tests done")
+    print("Tests done")
