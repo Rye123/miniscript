@@ -1,10 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../logger/logger.h"
 #include "../error/error.h"
 #include "token.h"
 #include "lexer.h"
+
+void initLexResult(LexResult *lexResult) {
+    if (lexResult == NULL) return;
+    lexResult->hasError = 0;
+    memset(lexResult->errorMessage, 0, MAX_ERRMSG_LEN);  // Clearing the error message array
+    lexResult->lineNum = 0;
+    lexResult->colNum = 0;
+}
+
+void lexResultUpdate(LexResult *lexResult, int hasError, const char *errStr, int lineNum, int colNum)
+{
+    lexResult->hasError = hasError;
+    sprintf(lexResult->errorMessage, "%s", errStr);
+    lexResult->lineNum = lineNum;
+    lexResult->colNum = colNum;
+}
 
 void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount)
 {
@@ -138,8 +153,8 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
     }
     return lexEnd;
 }
-int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source)
-{
+
+void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexResult *lexResult){
     size_t srcLen = strlen(source);
     int lineNum = 0;
     int colNum = 0;
@@ -147,7 +162,7 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
     size_t errLen = 0;
 
     size_t lexStart = 0;  // Start of the lexeme
-    size_t lexEnd = -1;   // End of the lexeme
+    size_t lexEnd;   // End of the lexeme
     while (lexStart < srcLen) {
         TokenType tokType = TOKEN_UNKNOWN;
         char lookahead = *(source + lexStart);
@@ -161,10 +176,6 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
         case '"': {
             // Possible: Literal String (Note: "'" is not recognised)
             tokType = TOKEN_STRING;
-            
-            // Positional indicators for error logging
-            size_t startLine = lineNum;
-            size_t startCol = colNum;
 
             // Iterate until end of string
             // We want lexStart to be at the first ", and lexEnd to be AFTER the next ".
@@ -179,7 +190,8 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
             //            lexEnd points to \n or EOF.
             if (*(source + lexEnd) == '\n' || *(source + lexEnd) == '\0') {
                 tokType = TOKEN_UNKNOWN;
-                lexError("Unterminated string", lineNum, colNum, errorsPtr, errorCount);
+                sprintf(errMsg, "Unterminated string");
+                lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd = srcLen;
             } else {
                 // make lexEnd point to the character AFTER the end quotes.
@@ -267,7 +279,7 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
                 colNum += lexEnd - lexStart;
                 if (errLen > 0) {
                     tokType = TOKEN_UNKNOWN;
-                    lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
+                    lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 }
             } else {
                 tokType = TOKEN_PERIOD;
@@ -296,8 +308,9 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
             } else {
                 // Unknown
                 tokType = TOKEN_UNKNOWN;
+                printf("ZERO0\n");
                 sprintf(errMsg, "Unexpected character %c", lookahead);
-                lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
+                lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd++; colNum++;
             }
             break;
@@ -365,7 +378,7 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
                 colNum += lexEnd - lexStart;  // lexEnd and lexStart on same line, so colNum would be still correct
                 if (errLen > 0) {
                     tokType = TOKEN_UNKNOWN;
-                    lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
+                    lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 }
             } else if (lookahead == ' ' || lookahead == '\t' || lookahead == '\r') {
                 // Whitespace, ignore 
@@ -373,8 +386,9 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
             } else {
                 // Unknown
                 tokType = TOKEN_UNKNOWN;
+                printf("ZERO\n");
                 sprintf(errMsg, "Unexpected character %c", lookahead);
-                lexError(errMsg, lineNum, colNum, errorsPtr, errorCount);
+                lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd++; colNum++;
             }
         }
@@ -391,6 +405,8 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
 
         lexStart = lexEnd;
         free(errMsg);
+
+        printf("ONE\n");
     }
 
     // Add NL token, if it doesn't already end with one
@@ -408,6 +424,5 @@ int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, 
 
     // Add EOF token
     (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum+1, 0);
-
-    return 1;
+    printf("TWO\n");
 }

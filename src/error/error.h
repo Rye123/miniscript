@@ -36,8 +36,8 @@ typedef enum {
 } ErrorType;
 
 static const char *ErrorTypeString[] = {
-    "Lexer Error",
-    "Compiler Error",
+    "Tokenization Error", // original Lexer Error
+    "Syntax Error",       // original Compiler Error
     "Unexpected EOF Error",
     "Runtime Error",
     "Type Error",

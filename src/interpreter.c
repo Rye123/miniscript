@@ -1,5 +1,9 @@
 #include "interpreter.h"
 
+void initFSM(FSM *fsm) {
+    fsm->current_state = INIT;
+}
+
 
 void transition(FSM *fsm, int success) {
     if (success) {
@@ -16,15 +20,22 @@ void transition(FSM *fsm, int success) {
             case EXECUTING:
                 fsm->current_state = CLEANING;
                 break;
-            case CLEANING:
-                fsm->current_state = STOP;
-                break;
             default:
-                fsm->current_state = ERROR;
+                fsm->current_state = CLEANING;
                 break;
         }
     } else {
-        fsm->current_state = ERROR;
+        switch (fsm->current_state) {
+            case LEXING:
+                fsm->current_state = LEXING_ERROR;
+                break;
+            case LEXING_ERROR:
+                fsm->current_state = CLEANING;
+                break;
+            default:
+                fsm->current_state = CLEANING;
+                break;
+        }
     }
 }
 
@@ -37,35 +48,52 @@ void reportError(const char *msg)
 // Returns true if expecting more input
 int runLine(const char *source, Context *executionContext, int asREPL)
 {
-    //executionLogger = consoleLogger;
-    FSM fsm = {INIT};
     int success;
-    size_t tokenCount = 0;
-    size_t errorCount = 0;
-    Token **tokens = malloc(sizeof(Token *) * 0);
-    Error **errors = malloc(sizeof(Error *) * 0);
-    ASTNode *root = astnode_new(SYM_START, NULL);
-
+    FSM fsm;
+    size_t tokenCount;
+    size_t errorCount;
+    Token **tokens;
+    Error **errors;
+    ASTNode *root;
+    LexResult lexResult;
     Error *parseError;
 
-    while (fsm.current_state != STOP) {
+    initFSM(&fsm);
+    while (fsm.current_state != CLEANING) {
         switch (fsm.current_state) {
             case INIT:
                 // 0. Initialisation
+                success = 1;
+                tokenCount = 0;
+                errorCount = 0;
+                tokens = malloc(sizeof(Token *) * 0);
+                errors = malloc(sizeof(Error *) * 0);
+                root = astnode_new(SYM_START, NULL);
+                initLexResult(&lexResult);
+
                 initErrorContext(source);
                 log_message(&executionLogger, "Input:\n%s\n", source);
 
-                transition(&fsm, 1);
+                transition(&fsm, success);
                 break;
             case LEXING:
+                printf("LEXING\n");
                 // 1. Lexing
-                success = lex((const Token ***) &tokens, &tokenCount,
-                              (const Error ***) &errors, &errorCount, source);
+                lex((const Token ***) &tokens, &tokenCount, source, &lexResult);
 
                 log_message(&executionLogger, "--- LEXING RESULT ---\n");
                 log_message(&executionLogger, "Token Count: %lu\n", tokenCount);
                 for (size_t i = 0; i < tokenCount; i++)
                     token_print(tokens[i]);
+
+                transition(&fsm, !lexResult.hasError);
+                break;
+            case LEXING_ERROR:
+                printf("LEXING_ERROR\n");
+                if (lexResult.hasError) {
+                    lexError(lexResult.errorMessage, lexResult.lineNum, lexResult.colNum, (const Error ***) &errors, &errorCount);
+                }
+
                 if (errorCount != 0) {
                     char errStr[MAX_ERRSTR_LEN];
                     for (size_t i = 0; i < errorCount; i++) {
@@ -74,15 +102,12 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                         error_free(errors[i]);
                     }
                     free(errors);
-                    for (size_t i = 0; i < tokenCount; i++)
-                        token_free(tokens[i]);
-                    free(tokens);
-                    return 0;
                 }
 
                 transition(&fsm, success);
                 break;
             case PARSING:
+                printf("PARSING\n");
                 // 2. Syntactic Analysis
                 parseError = parse(root, tokens, tokenCount);
                 log_message(&executionLogger, "\n--- PARSE TREE ---\n");
@@ -109,9 +134,10 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 astnode_print(root);
                 log_message(&executionLogger, "\n");
 
-                transition(&fsm, 1);
+                transition(&fsm, success);
                 break;
             case EXECUTING:
+                printf("EXECUTING\n");
                 // 3. Execution
                 log_message(&executionLogger, "\n--- EXECUTION RESULT ---\n");
                 ExecValue *val = execStart(executionContext, root);
@@ -122,25 +148,22 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 }
                 value_free(val);
 
-                transition(&fsm, 1);
-                break;
-            case CLEANING:
-                // 4. Clean up
-                astnode_free(root);
-                for (size_t i = 0; i < tokenCount; i++)
-                    token_free(tokens[i]);
-                free(tokens);
-                free(errorContext);
-                errorContext = NULL;
-
-                transition(&fsm, 1);
-                return 0;
-            case ERROR:
-                fsm.current_state = STOP;
+                transition(&fsm, success);
                 break;
             default:
                 break;
         }
+    }
+
+    if (fsm.current_state == CLEANING) {
+        printf("CLEANING\n");
+        // 4. Clean up
+        astnode_free(root);
+        for (size_t i = 0; i < tokenCount; i++)
+            token_free(tokens[i]);
+        free(tokens);
+        free(errorContext);
+        errorContext = NULL;
     }
     return 0;
 }
@@ -187,6 +210,10 @@ void runREPL()
     char buffer[LINE_MAX];
     memset(source, 0, REPL_BUF_MAX);
     while (1) {
+        if (strcmp(buffer, "exit\n") == 0) {
+            break;
+        }
+
         if (sourceSz > 0)
             log_message(&consoleLogger, ".. "); // Prompt for more input
         else

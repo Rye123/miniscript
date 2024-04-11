@@ -4,6 +4,17 @@
 #include "../error/error.h"
 #include "token.h"
 
+typedef struct {
+    int hasError;
+    char errorMessage[MAX_ERRMSG_LEN];
+    int lineNum;
+    int colNum;
+} LexResult;
+
+void initLexResult(LexResult *lexResult);
+void lexResultUpdate(LexResult *lexerResult, int hasError, const char *errStr, int lineNum, int colNum);
+
+
 // Adds a lexing error to the list.
 void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount);
 
@@ -13,5 +24,5 @@ Performs lexical analysis on `source`, storing the tokens in the array `*(tokens
 - `tokenCount`: Takes the ADDRESS of the size of that array.
 - `source`: Takes a string of source code.
 */
-int lex(const Token ***tokensPtr, size_t *tokenCount, const Error ***errorsPtr, size_t *errorCount, const char *source);
+void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexResult *lexerResult);
 #endif
