@@ -12,6 +12,7 @@ Context *context_new(Context *parent, Context *global)
     Context *ctx = malloc(sizeof(Context));
     ctx->global = global;
     ctx->parent = parent;
+    ctx->argCount = 0;
     ctx->symbols = malloc(0);
     ctx->symbolCount = 0;
     ctx->hasBreakOrContinue = 0;
@@ -29,6 +30,7 @@ void context_addSymbol(Context *ctx, ExecValue *identifier)
     char *identifierName = identifier->value.identifier_name;
     sym->symbolName = strdup(identifierName);
     sym->value = malloc(sizeof(ExecValue));
+    sym->value->type = TYPE_UNASSIGNED;
 
     ctx->symbolCount = ctx->symbolCount + 1;
     ctx->symbols = realloc(ctx->symbols, ctx->symbolCount * sizeof(ExecSymbol *));
@@ -145,6 +147,18 @@ ExecValue *value_newError(Error *err, Token *tokPtr)
     return val;
 }
 
+ExecValue *value_newFunction(ASTNode *argList, ASTNode *block, Token *tokPtr)
+{
+    ExecValue *val = malloc(sizeof(ExecValue));
+    FunctionRef* fnRef = malloc(sizeof(FunctionRef));
+    fnRef->argList = argList;
+    fnRef->fnBlk = block;
+    val->type = TYPE_FUNCTION;
+    val->value.function_ref = fnRef;
+    val->tok = tokPtr;
+    return val;
+}
+
 ExecValue *value_clone(ExecValue *value)
 {
     switch (value->type) {
@@ -152,6 +166,11 @@ ExecValue *value_clone(ExecValue *value)
     case TYPE_NUMBER: return value_newNumber(value->value.literal_num, value->tok);
     case TYPE_NULL: return value_newNull();
     case TYPE_IDENTIFIER: return value_newIdentifier(value->value.identifier_name, value->tok);
+    case TYPE_FUNCTION: {
+        ASTNode *argList = value->value.function_ref->argList;
+        ASTNode *block   = value->value.function_ref->fnBlk;
+        return value_newFunction(argList, block, value->tok);
+    }
     case TYPE_ERROR: return value_newError(value->value.error_ptr, value->tok);
     default:
         log_message(&executionLogger, "Critical Error: value_clone: Unknown ValueType %d.\n", value->type);
@@ -166,6 +185,7 @@ void value_free(ExecValue *value)
     case TYPE_STRING: free(value->value.literal_str); break;
     case TYPE_IDENTIFIER: free(value->value.identifier_name); break;
     case TYPE_ERROR: error_free(value->value.error_ptr); break;
+    case TYPE_FUNCTION: free(value->value.function_ref); break;
     default: break;
     }
     free(value);

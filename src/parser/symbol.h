@@ -51,7 +51,7 @@ PRNT_STMT    -> TOKEN_PRINT EXPR EOL | EOL
 WHILE_STMT   -> while EXPR EOL BLOCK end while EOL
 BREAK        -> break EOL
 CONTINUE     -> continue EOL
-RETURN     -> return EXPR EOL | return EOL
+RETURN       -> return EXPR EOL | return EOL
 IF_STMT      -> if EXPR then EOL BLOCK ELSEIF_STMT end if EOL |
                 if EXPR then EOL BLOCK ELSE_STMT   end if EOL |
                 if EXPR then EOL BLOCK             end if EOL
@@ -95,7 +95,8 @@ typedef enum {
     SYM_LINE,
     SYM_ASMT, SYM_STMT,
     SYM_EXPR_STMT, SYM_PRNT_STMT,
-    SYM_IFSTMT, SYM_ELSEIF, SYM_ELSE, SYM_BLOCK, SYM_WHILE, SYM_BREAK, SYM_CONTINUE,
+    SYM_IFSTMT, SYM_ELSEIF, SYM_ELSE, SYM_BLOCK, SYM_WHILE,
+    SYM_BREAK, SYM_CONTINUE, SYM_RETURN,
     SYM_EXPR,
     SYM_FN_EXPR, SYM_ARG_LIST, SYM_ARG,
     SYM_OR_EXPR, SYM_OR_EXPR_R,
@@ -115,7 +116,8 @@ static const char* SymbolTypeString[] = {
     "SYM_LINE",
     "SYM_ASMT", "SYM_STMT",
     "SYM_EXPR_STMT", "SYM_PRNT_STMT",
-    "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK", "SYM_WHILE", "SYM_BREAK", "SYM_CONTINUE",
+    "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK", "SYM_WHILE",
+    "SYM_BREAK", "SYM_CONTINUE", "SYM_RETURN",
     "SYM_EXPR",
     "SYM_FN_EXPR", "SYM_ARG_LIST", "SYM_ARG",
     "SYM_OR_EXPR", "SYM_OR_EXPR_R",

@@ -53,21 +53,147 @@ ExecValue *execTerminal(Context* ctx, ASTNode *terminal)
     return NULL;
 }
 
+ExecValue *execFnArgs(Context* ctx, ASTNode *fnArgs)
+{
+    if (fnArgs->type != SYM_FN_ARGS)
+        criticalError("fnArgs: Invalid symbol type, expected SYM_FN_ARGS");
+
+    size_t curFnArgCount = 0;
+    for (size_t i = 0; i < fnArgs->numChildren; i++) {
+        ASTNode *child = fnArgs->children[i];
+        if (child->type == SYM_EXPR) {
+            curFnArgCount += 1;
+            if (curFnArgCount > ctx->argCount) {
+              Error *szError = error_new(ERR_RUNTIME, -1, -1);
+              snprintf(szError->message, MAX_ERRMSG_LEN,
+                       "Too many arguments provided to function.");
+              return value_newError(szError, child->tok);
+            }
+            // the PARENT context is used to get the value.
+            ExecValue *value = execExpr(ctx->parent, child);
+            if (value->type == TYPE_ERROR)
+              return value;
+
+            value = unpackValue(ctx->parent, value);
+
+            // Assign the value within the function context
+            ExecSymbol *fnSym = ctx->symbols[curFnArgCount - 1];
+            value_free(fnSym->value);
+            fnSym->value = value_clone(value);
+            value_free(value);
+        } else if (child->type == SYM_TERMINAL && child->tok->type == TOKEN_COMMA) {
+            continue;
+        } else {
+            criticalError("fnArgs: Unexpected child in arglist.");
+        }
+    }
+
+    // Check if all values in ctx have been assigned
+    for (size_t i = 0; i < ctx->symbolCount; i++) {
+        ExecSymbol *sym = ctx->symbols[i];
+        if (sym->value->type == TYPE_UNASSIGNED) {
+            Error *unasErr = error_new(ERR_RUNTIME, -1, -1);
+            snprintf(unasErr->message, MAX_ERRMSG_LEN, "Too little arguments provided to function.");
+            return value_newError(unasErr, fnArgs->tok);
+        }
+    }
+
+    return value_newNull();
+}
+
+ExecValue *execFnCall(Context* ctx, ASTNode *fnCall)
+{
+    if (fnCall->type != SYM_FN_CALL)
+        criticalError("fnCall: Invalid symbol type, expected SYM_FN_CALL");
+
+    if (fnCall->numChildren != 4)
+        criticalError("fnCall: Expected 4 children.");
+    if (fnCall->children[0]->type != SYM_TERMINAL || fnCall->children[0]->tok->type != TOKEN_IDENTIFIER)
+        criticalError("fnCall: Invalid child 1, expected an identifier.");
+    
+    // Get identifier, check in ctx
+    ExecValue *identifier = execTerminal(ctx, fnCall->children[0]);
+    ExecValue *val = context_getValue(ctx, identifier);
+    if (val == NULL) {
+        Error *typeErr = error_new(ERR_RUNTIME_TYPE, -1, -1);
+        snprintf(typeErr->message, MAX_ERRMSG_LEN, "No such identifier %s", identifier->value.identifier_name);
+        value_free(identifier);
+        return value_newError(typeErr, identifier->tok);
+    }
+    if (val->type != TYPE_FUNCTION) {
+        Error *typeErr = error_new(ERR_RUNTIME_TYPE, -1, -1);
+        snprintf(typeErr->message, MAX_ERRMSG_LEN, "Identifier %s is not a function.", identifier->value.identifier_name);
+        value_free(identifier);
+        value_free(val);
+        return value_newError(typeErr, identifier->tok);
+    }
+    FunctionRef *fnRef = val->value.function_ref;
+    ASTNode *fnArgList = fnRef->argList;
+    ASTNode *fnBlk = fnRef->fnBlk;
+    ASTNode *fnArgs = fnCall->children[2];
+    if (fnArgList->type != SYM_ARG_LIST)
+        criticalError("fnCall: Referenced function ref's arg list is not SYM_ARG_LIST");
+    if (fnBlk->type != SYM_BLOCK)
+        criticalError("fnCall: Referenced function ref's block is not SYM_BLOCK");
+    if (fnArgs->type != SYM_FN_ARGS)
+        criticalError("fnCall: Arguments for function call not of type SYM_FN_ARGS");
+    
+    // if exists, create new context with specific arg count
+    Context *fnCtx = context_new(ctx, ctx->global);
+    if (ctx->global == NULL)
+        fnCtx->global = ctx;
+    
+    fnCtx->argCount = 0;
+    
+    // Call linked arglist
+    ExecValue *errVal = execArgList(fnCtx, fnArgList);
+    if (errVal->type == TYPE_ERROR) {
+        value_free(identifier);
+        value_free(val);
+        return errVal;
+    }
+    value_free(errVal);
+    
+    // Call fnargs
+    errVal = execFnArgs(fnCtx, fnArgs);
+    if (errVal->type == TYPE_ERROR) {
+        value_free(identifier);
+        value_free(val);
+        return errVal;
+    }
+    value_free(errVal);
+    value_free(identifier);
+    
+    // Call linked block until return
+    ExecValue *retVal = execBlock(fnCtx, fnBlk);
+    return retVal;
+}
+
 ExecValue *execPrimary(Context* ctx, ASTNode *primary)
 {
     if (primary->type != SYM_PRIMARY)
         criticalError("primary: Invalid symbol type, expected SYM_PRIMARY");
     
-    // Check if primary is ( EXPR ) or TERMINAL
-    if (primary->numChildren == 1)
-        return execTerminal(ctx, primary->children[0]);
-    if (primary->numChildren == 3) {
-        if (primary->children[0]->tok->type != TOKEN_PAREN_L ||
-            primary->children[2]->tok->type != TOKEN_PAREN_R)
-            criticalError("primary: Expected ( EXPR ), instead given invalid expression with 3 children.");
-        return execExpr(ctx, primary->children[1]);
+    // Check if primary is ( EXPR ) or TERMINAL or FN_CALL
+    if (primary->numChildren == 1) {
+        ASTNode *child = primary->children[0];
+        if (child->type == SYM_TERMINAL)
+            return execTerminal(ctx, child);
+        else if (child->type == SYM_FN_CALL)
+            return execFnCall(ctx, child);
+        
+        criticalError("primary: Expected a TERMINAL or FN_CALL.");
+        return NULL;
     }
     
+    if (primary->numChildren == 3) {
+      if (primary->children[0]->tok->type != TOKEN_PAREN_L ||
+          primary->children[2]->tok->type != TOKEN_PAREN_R)
+        criticalError("primary: Expected ( EXPR ), instead given invalid "
+                      "expression with 3 children.");
+      return execExpr(ctx, primary->children[1]);
+    }
+
     criticalError("primary: Expected 1 or 3 children.");
     return NULL;
 }
@@ -386,6 +512,89 @@ ExecValue* execOrExpr(Context* ctx, ASTNode* orExpr)
     return NULL;
 }
 
+ExecValue* execArg(Context* ctx, ASTNode* arg)
+{
+    if (arg->type != SYM_ARG)
+        criticalError("arg: Invalid symbol type, expected SYM_ARG");
+
+    // Could be IDENTIFIER or IDENTIFIER = TERMINAL
+    if (arg->numChildren == 1) {
+        ExecValue *identifier = execTerminal(ctx, arg->children[0]);
+        
+        if (context_getSymbol(ctx, identifier) != NULL) {
+            Error *execError = error_new(ERR_RUNTIME, -1, -1);
+            snprintf(execError->message, MAX_ERRMSG_LEN, "Function parameter has the same identifier name \"%s\"", identifier->value.identifier_name);
+            ExecValue *errVal = value_newError(execError, identifier->tok);
+            value_free(identifier);
+            return errVal;
+        }
+        context_addSymbol(ctx, identifier);
+    } else if (arg->numChildren == 3) {
+        ExecValue *identifier = execTerminal(ctx, arg->children[0]);
+        ExecValue *defaultValue = execTerminal(ctx, arg->children[1]); //TODO: change to expr in here and in grammar
+        if (arg->children[1]->type != SYM_TERMINAL || arg->children[1]->tok->type != TOKEN_EQUAL)
+            criticalError("arg: Second child of assignment not an equals.");
+        
+        if (context_getSymbol(ctx, identifier) != NULL) {
+            Error *execError = error_new(ERR_RUNTIME, -1, -1);
+            snprintf(execError->message, MAX_ERRMSG_LEN, "Function parameter has the same identifier name \"%s\"", identifier->value.identifier_name);
+            ExecValue *errVal = value_newError(execError, identifier->tok);
+            value_free(identifier);
+            return errVal;
+        }
+        context_addSymbol(ctx, identifier);
+        context_setSymbol(ctx, identifier, defaultValue);
+        value_free(defaultValue);
+    }
+    
+    return value_newNull();
+}
+
+// Called by the function call to add the context variables
+ExecValue* execArgList(Context* ctx, ASTNode* argList)
+{
+    if (argList->type != SYM_ARG_LIST)
+        criticalError("argList: Invalid symbol type, expected SYM_ARG_LIST");
+
+    // Add each symbol to the list
+    for (size_t i = 0; i < argList->numChildren; i++) {
+        ASTNode *child = argList->children[i];
+        ExecValue *errVal;
+        if (child->type == SYM_ARG) {
+            errVal = execArg(ctx, child);
+            ctx->argCount += 1;
+        } else if (child->type == SYM_TERMINAL && child->tok->type == TOKEN_COMMA) {
+            continue;
+        } else {
+            criticalError("argList: Unexpected child in arglist.");
+        }
+        if (errVal->type == TYPE_ERROR)
+            return errVal;
+        
+        value_free(errVal);
+    }
+    
+    return value_newNull();
+}
+
+// Returns the function reference variable, with the argList and block. This will be stored in the current context
+ExecValue* execFnExpr(Context* ctx, ASTNode* fnExpr)
+{
+    if (fnExpr->type != SYM_FN_EXPR)
+        criticalError("fnExpr: Invalid symbol type, expected SYM_FN_EXPR");
+
+    // Validate the various symbols first
+    if (fnExpr->numChildren != 8)
+        criticalError("fnExpr: Expected 8 children.");
+    if (fnExpr->children[2]->type != SYM_ARG_LIST || fnExpr->children[5]->type != SYM_BLOCK)
+        criticalError("fnExpr: Expected child 2 to be ARG_LIST, child 5 to be BLOCK.");
+    
+    ASTNode *argList = fnExpr->children[2];
+    ASTNode *block = fnExpr->children[5];
+    
+    return value_newFunction(argList, block, fnExpr->tok);
+}
+
 ExecValue *execExpr(Context* ctx, ASTNode *expr)
 {
     if (expr->type != SYM_EXPR)
@@ -394,7 +603,11 @@ ExecValue *execExpr(Context* ctx, ASTNode *expr)
     if (expr->numChildren != 1)
         criticalError("expr: Expected 1 child.");
 
-    return execOrExpr(ctx, expr->children[0]);
+    if (expr->children[0]->type == SYM_OR_EXPR)
+        return execOrExpr(ctx, expr->children[0]);
+    else if(expr->children[0]->type == SYM_FN_EXPR)
+        return execFnExpr(ctx, expr->children[0]);
+    criticalError("expr: Expected a child.");
 }
 
 ExecValue *execPrntStmt(Context* ctx, ASTNode *prntStmt)
@@ -463,8 +676,26 @@ ExecValue *execExprStmt(Context* ctx, ASTNode *exprStmt)
     return NULL;
 }
 
-ExecValue * execBlock(Context* ctx, ASTNode *block){
+ExecValue *execReturn(Context *ctx, ASTNode *ret)
+{
+    if (ret->type != SYM_RETURN)
+        criticalError("return: Invalid symbol type, expeected SYM_RETURN");
+
+    if (ret->numChildren == 2)
+        return value_newNull();
+    if (ret->numChildren == 3)
+        return execExpr(ctx, ret->children[1]);
+
+    criticalError("return: Expected 2 or 3 children.");
+    return NULL;
+}
+
+ExecValue *execBlock(Context* ctx, ASTNode *block)
+{
 	for (int i = 0; i < block->numChildren; i++){
+        if (block->children[i]->type == SYM_RETURN)
+            return execReturn(ctx, block->children[i]);
+        
 		ExecValue *result = execLine(ctx, block->children[i]);
         if (result->type == TYPE_ERROR)
             return result;
@@ -508,7 +739,8 @@ ExecValue *execElseIf(Context* ctx, ASTNode *elseIfStmt){
     return value_newNull();
 }
 
-ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
+ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt)
+{
     if (ifStmt->type != SYM_IFSTMT)
         criticalError("ifstmt: Invalid symbol type, expected SYM_IFSTMT");
 
@@ -529,7 +761,8 @@ ExecValue *execIfStmt(Context* ctx, ASTNode *ifStmt){
     return value_newNull();
 }
 
-ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
+ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt)
+{
     if (whileStmt->type != SYM_WHILE)
         criticalError("ifstmt: Invalid symbol type, expected SYM_WHILE");
     ExecValue *expr = execExpr(ctx, whileStmt->children[1]);
@@ -561,14 +794,16 @@ ExecValue *execWhileStmt(Context* ctx, ASTNode *whileStmt){
     return value_newNull();
 }
 
-ExecValue *execBreak(Context* ctx, ASTNode *breakStmt){
+ExecValue *execBreak(Context* ctx, ASTNode *breakStmt)
+{
     if (breakStmt->type != SYM_BREAK)
         criticalError("ifstmt: Invalid symbol type, expected SYM_BREAK");
     ctx->hasBreakOrContinue = 1;
     return value_newNull();
 }
 
-ExecValue *execContinue(Context* ctx, ASTNode *breakStmt){
+ExecValue *execContinue(Context* ctx, ASTNode *breakStmt)
+{
     if (breakStmt->type != SYM_CONTINUE)
         criticalError("ifstmt: Invalid symbol type, expected SYM_CONTINUE");
     ctx->hasBreakOrContinue = 2;
@@ -592,12 +827,11 @@ ExecValue *execStmt(Context* ctx, ASTNode *stmt)
 			return execBreak(ctx, stmt->children[0]);
         if (stmt->children[0]->type == SYM_CONTINUE)
 			return execContinue(ctx, stmt->children[0]);
-		if (stmt->children[0]->type == SYM_WHILE){
+		if (stmt->children[0]->type == SYM_WHILE)
 			return execWhileStmt(ctx, stmt->children[0]);
-		}
-		if (stmt->children[0]->type == SYM_WHILE){
-			return execWhileStmt(ctx, stmt->children[0]);
-		}
+		if (stmt->children[0]->type == SYM_RETURN)
+			return execReturn(ctx, stmt->children[0]);
+		
     }
     criticalError("stmt: Invalid statement.");
     return NULL;

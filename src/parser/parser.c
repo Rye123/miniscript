@@ -134,6 +134,7 @@ Error *parseFnCall(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
         return err;
     }
     parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_PAREN_R);
+    astnode_print(self);
     astnode_addChildNode(parent, self);
     return NULL;
 }
@@ -142,20 +143,16 @@ Error *parseFnArgs(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *cu
 {
     printParse("parseFnArgs", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_FN_ARGS, NULL);
-    Error *err = parseExpr(self, tokens, tokensLen, curIdx);
-    if (err) {
-        astnode_free(self);
-        return err;
-    }
+    Error *err;
     
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
-    while (lookahead->type == TOKEN_COMMA) {
-        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_COMMA);
+    while (lookahead->type != TOKEN_PAREN_R) {
         err = parseExpr(self, tokens, tokensLen, curIdx);
         if (err) {
             astnode_free(self);
             return err;
         }
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_COMMA);
         lookahead = getToken(tokens, tokensLen, *curIdx);
     }
     astnode_addChildNode(parent, self);
@@ -504,20 +501,16 @@ Error* parseArgList(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
 {
     printParse("parseArgList", tokens, curIdx);
     ASTNode *self = astnode_new(SYM_ARG_LIST, NULL);
-    Error *err = parseArg(self, tokens, tokensLen, curIdx);
-    if (err) {
-        astnode_free(self);
-        return err;
-    }
+    Error *err;
     
     Token *lookahead = getToken(tokens, tokensLen, *curIdx);
-    while (lookahead->type == TOKEN_COMMA) {
-        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_COMMA);
+    while (lookahead->type != TOKEN_PAREN_R) {
         err = parseArg(self, tokens, tokensLen, curIdx);
         if (err) {
             astnode_free(self);
             return err;
         }
+        parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_COMMA);
         lookahead = getToken(tokens, tokensLen, *curIdx);
     }
     astnode_addChildNode(parent, self);
@@ -527,7 +520,7 @@ Error* parseArgList(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *c
 Error *parseReturn(ASTNode *parent, Token **tokens, size_t tokensLen, size_t *curIdx)
 {
     printParse("parseReturn", tokens, curIdx);
-    ASTNode *self = astnode_new(SYM_CONTINUE, NULL);
+    ASTNode *self = astnode_new(SYM_RETURN, NULL);
     Error *err = NULL;
     err = parseTerminal(self, tokens, tokensLen, curIdx, TOKEN_RETURN);
     if (err) {
