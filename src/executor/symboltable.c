@@ -204,7 +204,10 @@ int value_falsiness(ExecValue *e)
     case TYPE_IDENTIFIER:
         criticalError("value_falsiness: pass the VALUE of the identifier into this function with context_getValue(), instead of the identifier itself.");
         exit(1);
+    default:
+        return -1;
     }
+
     return -1;
 }
 
