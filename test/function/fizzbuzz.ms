@@ -1,4 +1,5 @@
 fizzBuzz = function(n)
+    // Fizzbuzz
     i = 1
     while i <= n
         s = "Fizz" * (i % 3 == 0) + "Buzz" * (i % 5 == 0)

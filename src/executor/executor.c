@@ -94,7 +94,7 @@ ExecValue *execFnArgs(Context* ctx, ASTNode *fnArgs)
         if (sym->value->type == TYPE_UNASSIGNED) {
             Error *unasErr = error_new(ERR_RUNTIME, -1, -1);
             snprintf(unasErr->message, MAX_ERRMSG_LEN, "Too little arguments provided to function.");
-            return value_newError(unasErr, fnArgs->tok);
+            return value_newError(unasErr, fnArgs->parent->children[0]->tok);
         }
     }
 

@@ -143,8 +143,13 @@ ExecValue *value_newError(Error *err, Token *tokPtr)
     val->type = TYPE_ERROR;
     val->value.error_ptr = err;
     val->tok = tokPtr;
-    err->lineNum = val->tok->lineNum;
-    err->colNum = val->tok->colNum;
+    if (val->tok != NULL) {
+        err->lineNum = val->tok->lineNum;
+        err->colNum = val->tok->colNum;
+    } else {
+        err->lineNum = -1;
+        err->colNum = -1;
+    }
     return val;
 }
 
