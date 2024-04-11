@@ -1,3 +1,2 @@
 a = (1
-// Compiler Error: got EOL where RParen is required
-// by right need interpreter to go to next line, but our grammar doesn't support right now
+// Syntax Error (Line 1, Column 7): Expected a closing parentheses.

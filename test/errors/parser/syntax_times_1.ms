@@ -1,2 +1,2 @@
 a = *1
-// Compiler Error: got OpTimes where number, string, or identifier is required
+// Syntax Error (Line 1, Column 6): Expecting either a terminal or a starting parentheses, instead got token TOKEN_STAR.

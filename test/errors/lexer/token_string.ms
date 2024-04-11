@@ -1,4 +1,3 @@
 s = "Hello
 world!"
-
-x = 5$&@*!
+// Tokenization Error (Line 1, Column 11): Unterminated string
