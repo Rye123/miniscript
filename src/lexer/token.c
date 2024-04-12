@@ -35,6 +35,14 @@ Token* token_new(TokenType type, const char* lexeme, const int lexemeLength, int
     return ret;
 }
 
+Token *token_clone(Token *tok)
+{
+    size_t lexLen = 0;
+    if (tok->lexeme != NULL)
+        lexLen = strlen(tok->lexeme);
+    return token_new(tok->type, tok->lexeme, lexLen, tok->lineNum, tok->colNum);
+}
+
 int token_compare(Token *actual, Token *expected){
     token_print(actual);
     token_print(expected);
@@ -69,6 +77,7 @@ void token_string(char *str, const Token *token)
 
 void token_free(Token *token)
 {
-    free(token->lexeme);
+    if (token->lexeme != NULL)
+        free(token->lexeme);
     free(token);
 }

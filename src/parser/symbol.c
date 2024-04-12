@@ -9,11 +9,24 @@ ASTNode *astnode_new(SymbolType type, Token *tok)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = type;
-    node->tok = tok;
+    node->tok = NULL;
+    if (tok != NULL)
+        node->tok = token_clone(tok);
     node->parent = NULL;
     node->children = malloc(sizeof(ASTNode *) * 0);
     node->numChildren = 0;
     return node;
+}
+
+ASTNode *astnode_clone(ASTNode *node)
+{
+    ASTNode *new = astnode_new(node->type, node->tok);
+
+    // Loop through children and copy
+    for (size_t i = 0; i < node->numChildren; i++)
+        astnode_addChildNode(new, astnode_clone(node->children[i]));
+
+    return new;
 }
 
 void astnode_free(ASTNode *node)
@@ -25,6 +38,8 @@ void astnode_free(ASTNode *node)
     }
 
     // Free self
+    if (node->tok != NULL)
+        token_free(node->tok);
     free(node->children);
     free(node);
 }

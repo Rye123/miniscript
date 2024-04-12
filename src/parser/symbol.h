@@ -132,10 +132,6 @@ static const char* SymbolTypeString[] = {
     "SYM_TERMINAL",
 };
 
-
-// Returns 0 if the token is unimplemented, 1 if it's intended to be implemented.
-int isTokenUnimplemented(Token tok);
-
 typedef struct _astnode {
     SymbolType type;
     Token *tok;

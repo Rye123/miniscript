@@ -86,6 +86,8 @@ typedef struct {
 
 // Generates a new token. If the token type is a literal, the literal will be automatically generated. If the token is a literal number and exceeds the range for a double, errno will be set to ERANGE.
 Token* token_new(TokenType type, const char* lexeme, const int lexemeLength, int lineNum, int colNum);
+// Clones a token entirely.
+Token *token_clone(Token* token);
 // Frees the memory associated with the token
 void token_free(Token* token); 
 // Prints formatted Token string
