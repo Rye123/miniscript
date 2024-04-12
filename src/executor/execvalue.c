@@ -67,8 +67,8 @@ ExecValue *value_newFunction(ASTNode *argList, ASTNode *block, Token *tokPtr)
 {
     ExecValue *val = malloc(sizeof(ExecValue));
     FunctionRef* fnRef = malloc(sizeof(FunctionRef));
-    fnRef->argList = argList;
-    fnRef->fnBlk = block;
+    fnRef->argList = astnode_clone(argList);
+    fnRef->fnBlk = astnode_clone(block);
     val->type = TYPE_FUNCTION;
     val->value.function_ref = fnRef;
     val->tok = tokPtr;
@@ -101,7 +101,13 @@ void value_free(ExecValue *value)
     case TYPE_STRING: free(value->value.literal_str); break;
     case TYPE_IDENTIFIER: free(value->value.identifier_name); break;
     case TYPE_ERROR: error_free(value->value.error_ptr); break;
-    case TYPE_FUNCTION: free(value->value.function_ref); break;
+    case TYPE_FUNCTION: {
+        FunctionRef *ref = value->value.function_ref;
+        astnode_free(ref->argList);
+        astnode_free(ref->fnBlk);
+        free(value->value.function_ref);
+        break;
+    }
     default: break;
     }
     free(value);

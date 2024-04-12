@@ -141,6 +141,7 @@ typedef struct _astnode {
 } ASTNode;
 
 ASTNode *astnode_new(SymbolType type, Token *tok);
+ASTNode *astnode_clone(ASTNode *node);
 void astnode_free(ASTNode *node);
 void astnode_print(ASTNode *node);
 
