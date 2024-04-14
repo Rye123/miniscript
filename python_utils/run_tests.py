@@ -4,7 +4,7 @@ from sys import exit
 
 show_contents = True
 testdir = Path("../test")
-executable = Path("./miniscript")
+executable = Path("../src/miniscript")
 
 if __name__ == "__main__":
     if not testdir.is_dir():
