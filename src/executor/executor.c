@@ -14,6 +14,11 @@ ExecValue *unpackValue(Context *ctx, ExecValue *val)
         // Extract symbol value
         ExecValue *newVal = context_getValue(ctx, val);
 
+        if (newVal == NULL && ctx->global != NULL) {
+            // Check global scope
+            newVal = context_getValue(ctx->global, val);
+        }
+
         if (newVal == NULL) {
             Error *nameErr = error_new(ERR_RUNTIME_NAME, -1, -1);
             snprintf(nameErr->message, MAX_ERRMSG_LEN, "Undeclared identifier \"%s\"", val->value.identifier_name);
