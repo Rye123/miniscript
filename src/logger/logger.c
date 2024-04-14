@@ -1,4 +1,5 @@
 #include "logger.h"
+#include <stdarg.h>
 
 Logger resultLogger = {NULL};
 Logger executionLogger = {NULL};

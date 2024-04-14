@@ -6,8 +6,7 @@
 #include "executor.h"
 #include "symboltable.h"
 
-Context *context_new(Context *parent, Context *global)
-{
+Context *context_new(Context *parent, Context *global) {
     Context *ctx = malloc(sizeof(Context));
     ctx->global = global;
     ctx->parent = parent;
@@ -19,16 +18,17 @@ Context *context_new(Context *parent, Context *global)
     return ctx;
 }
 
-void context_addSymbol(Context *ctx, ExecValue *identifier)
-{
+void context_addSymbol(Context *ctx, ExecValue *identifier) {
     char *identifierName;
     ExecSymbol *sym = malloc(sizeof(ExecSymbol));
 
     if (identifier->type != TYPE_IDENTIFIER) {
-        log_message(&executionLogger, "Tried to add an ExecSymbol with an 'identifier' of type %s, expected TYPE_IDENTIFIER.\n", ValueTypeString[identifier->type]);
+        log_message(&executionLogger,
+                    "Tried to add an ExecSymbol with an 'identifier' of type %s, expected TYPE_IDENTIFIER.\n",
+                    ValueTypeString[identifier->type]);
         exit(1);
     }
-	
+
     identifierName = identifier->value.identifier_name;
     sym->symbolName = strdup(identifierName);
     sym->value = malloc(sizeof(ExecValue));
@@ -36,17 +36,18 @@ void context_addSymbol(Context *ctx, ExecValue *identifier)
 
     ctx->symbolCount = ctx->symbolCount + 1;
     ctx->symbols = realloc(ctx->symbols, ctx->symbolCount * sizeof(ExecSymbol *));
-    ctx->symbols[ctx->symbolCount-1] = sym;
+    ctx->symbols[ctx->symbolCount - 1] = sym;
 }
 
-ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier)
-{
+ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier) {
     char *symbolName;
     size_t expLen;
     size_t i;
 
     if (identifier->type != TYPE_IDENTIFIER) {
-        log_message(&executionLogger, "Tried to get an ExecSymbol with 'identifier' of type %s, expected TYPE_IDENTIFIER.\n", ValueTypeString[identifier->type]);
+        log_message(&executionLogger,
+                    "Tried to get an ExecSymbol with 'identifier' of type %s, expected TYPE_IDENTIFIER.\n",
+                    ValueTypeString[identifier->type]);
         exit(1);
     }
 
@@ -61,22 +62,21 @@ ExecSymbol *context_getSymbol(Context *ctx, ExecValue *identifier)
     return NULL;
 }
 
-ExecValue *context_getValue(Context *ctx, ExecValue *identifier)
-{
+ExecValue *context_getValue(Context *ctx, ExecValue *identifier) {
     ExecSymbol *sym = context_getSymbol(ctx, identifier);
     if (sym == NULL)
         return NULL;
     return value_clone(sym->value);
 }
 
-void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value)
-{
+void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value) {
     ExecValue *newValue;
     ExecSymbol *sym = context_getSymbol(ctx, identifier);
 
 
     if (sym == NULL) {
-        log_message(&executionLogger, "Execution Error: Could not set value of undeclared variable %s.\n", sym->symbolName);
+        log_message(&executionLogger, "Execution Error: Could not set value of undeclared variable %s.\n",
+                    sym->symbolName);
         exit(1);
     }
 
@@ -88,8 +88,7 @@ void context_setSymbol(Context *ctx, ExecValue *identifier, ExecValue *value)
     sym->value = newValue;
 }
 
-void context_free(Context *ctx)
-{
+void context_free(Context *ctx) {
     size_t i;
     for (i = 0; i < ctx->symbolCount; i++)
         free(ctx->symbols[i]);

@@ -4,7 +4,6 @@ void initFSM(FSM *fsm) {
     fsm->current_state = INIT;
 }
 
-
 void transition(FSM *fsm, int success) {
     if (success) {
         switch (fsm->current_state) {
@@ -51,15 +50,13 @@ void transition(FSM *fsm, int success) {
     }
 }
 
-void reportError(const char *msg)
-{
+void reportError(const char *msg) {
     log_message(&consoleLogger, "\033[91m%s\033[0m\n", msg);
     log_message(&executionLogger, "%s\n", msg);
 }
 
 /* Returns true if expecting more input */
-int runLine(const char *source, Context *executionContext, int asREPL)
-{
+int runLine(const char *source, Context *executionContext, int asREPL) {
     int success;
     FSM fsm;
     size_t tokenCount;
@@ -103,7 +100,8 @@ int runLine(const char *source, Context *executionContext, int asREPL)
                 break;
             case LEXING_ERROR:
                 if (lexResult.hasError) {
-                    lexError(lexResult.errorMessage, lexResult.lineNum, lexResult.colNum, (const Error ***) &errors, &errorCount);
+                    lexError(lexResult.errorMessage, lexResult.lineNum, lexResult.colNum, (const Error ***) &errors,
+                             &errorCount);
                 }
 
                 if (errorCount != 0) {
@@ -184,11 +182,10 @@ int runLine(const char *source, Context *executionContext, int asREPL)
     return 0;
 }
 
-void runFile(const char* fname)
-{
+void runFile(const char *fname) {
     Context *globalCtx;
     FILE *srcFile = fopen(fname, "r");
-    long fileSz = 0;
+    long fileSz;
     char *source;
     size_t totalSz;
     if (srcFile == NULL) {
@@ -218,8 +215,7 @@ void runFile(const char* fname)
     runLine(source, globalCtx, 0);
 }
 
-void runREPL(void)
-{
+void runREPL(void) {
     char source[REPL_BUF_MAX];
     Context *globalCtx = context_new(NULL, NULL);
     size_t sourceSz = 0;
@@ -245,7 +241,7 @@ void runREPL(void)
         bufSz = strnlen(buffer, LINE_MAX);
         if (bufSz > (REPL_BUF_MAX - sourceSz))
             criticalError("Too much input in REPL buffer, increase REPL_BUF_MAX.");
-        
+
         strncpy(source + sourceSz, buffer, bufSz);
         sourceSz += bufSz;
 

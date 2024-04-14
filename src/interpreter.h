@@ -12,6 +12,7 @@
 #include "parser/parser.h"
 #include "executor/executor.h"
 #include "executor/symboltable.h"
+
 #define REPL_BUF_MAX 2000
 #define LINE_MAX 1000
 
@@ -30,11 +31,16 @@ typedef struct {
     State current_state;
 } FSM;
 
-void transition(FSM *fsm, int success);
 void initFSM(FSM *fsm);
+
+void transition(FSM *fsm, int success);
+
+void reportError(const char *msg);
+
 int runLine(const char *source, Context *executionContext, int asREPL);
-void runFile(const char* fname);
+
+void runFile(const char *fname);
+
 void runREPL(void);
 
 #endif
-

@@ -13,16 +13,14 @@ void initLexResult(LexResult *lexResult) {
     lexResult->colNum = 0;
 }
 
-void lexResultUpdate(LexResult *lexResult, int hasError, const char *errStr, int lineNum, int colNum)
-{
+void lexResultUpdate(LexResult *lexResult, int hasError, const char *errStr, int lineNum, int colNum) {
     lexResult->hasError = hasError;
     snprintf(lexResult->errorMessage, MAX_ERRMSG_LEN, "%s", errStr);
     lexResult->lineNum = lineNum;
     lexResult->colNum = colNum;
 }
 
-void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount)
-{
+void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount) {
     Error *err = error_new(ERR_TOKEN, lineNum, colNum);
     snprintf(err->message, MAX_ERRMSG_LEN, "%s", errStr);
 
@@ -32,16 +30,13 @@ void lexError(const char *errStr, int lineNum, int colNum, const Error ***errors
     (*errorsPtr)[*(errorCount) - 1] = err;
 }
 
-/* Returns true if candidate is an exact match for expected */
-int strnncmp(const char *candidate, size_t candidateLen, const char *expected, const size_t expectedLen)
-{
+int strnncmp(const char *candidate, size_t candidateLen, const char *expected, const size_t expectedLen) {
     if (candidateLen != expectedLen)
         return 0;
     return strncmp(candidate, expected, expectedLen) == 0;
 }
 
-TokenType matchKeywordOrIdentifier(const char* candidate, const size_t candidateLen)
-{
+TokenType matchKeywordOrIdentifier(const char *candidate, const size_t candidateLen) {
     if (strnncmp(candidate, candidateLen, "if", 2))
         return TOKEN_IF;
     else if (strnncmp(candidate, candidateLen, "else", 4))
@@ -88,12 +83,12 @@ TokenType matchKeywordOrIdentifier(const char* candidate, const size_t candidate
 }
 
 int isDigit(char c) { return (c >= '0') && (c <= '9'); }
+
 int isAlpha(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
+
 int isAlphaDigit(char c) { return isDigit(c) || isAlpha(c); }
 
-/* Lexes a single number, starting from lexStart. Returns the position of the end of the lexeme. */
-size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *errLen, char *errMsg)
-{
+size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *errLen, char *errMsg) {
     size_t lexEnd = lexStart;
     size_t i;
     size_t dotPosition;
@@ -129,7 +124,8 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
             if (!isDigit(lookahead2)) {
                 /* Here, we have something like "1e-a" -- we expect a digit for */
                 /* the negative exponent, but we got some other character instead */
-                snprintf(errMsg, MAX_ERRMSG_LEN, "Invalid scientific notation, expected digit after '-', instead got '%c'", lookahead2);
+                snprintf(errMsg, MAX_ERRMSG_LEN,
+                         "Invalid scientific notation, expected digit after '-', instead got '%c'", lookahead2);
                 *errLen = strlen(errMsg);
                 lexEnd++;
                 return lexEnd;
@@ -142,7 +138,8 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
             if (!isDigit(lookahead2)) {
                 /* Here, we have something like "1e+a" -- we expect a digit for */
                 /* the negative exponent, but we got some other character instead */
-                snprintf(errMsg, MAX_ERRMSG_LEN, "Invalid scientific notation, expected digit after '+', instead got '%c'", lookahead2);
+                snprintf(errMsg, MAX_ERRMSG_LEN,
+                         "Invalid scientific notation, expected digit after '+', instead got '%c'", lookahead2);
                 *errLen = strlen(errMsg);
                 lexEnd++;
                 return lexEnd;
@@ -160,7 +157,7 @@ size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *err
     return lexEnd;
 }
 
-void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexResult *lexResult){
+void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexResult *lexResult) {
     size_t i;
     size_t srcLen = strlen(source);
     int lineNum = 0;
@@ -186,226 +183,264 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
 
         /* Scan a single lexeme */
         switch (lookahead) {
-        case '"': {
-            /* Possible: Literal String (Note: "'" is not recognised) */
-            tokType = TOKEN_STRING;
+            case '"': {
+                /* Possible: Literal String (Note: "'" is not recognised) */
+                tokType = TOKEN_STRING;
 
-            /* Iterate until end of string */
-            /* We want lexStart to be at the first ", and lexEnd to be AFTER the next ". */
-            lexEnd++; colNum++;
-            for (i = lexStart + 1; *(source + i) != '"'; i++) {
-                if (*(source + i) == '\n' || *(source + i) == '\0')
-                    break;
-                lexEnd++; colNum++;
-            }
-
-            /* INVARIANT: lexEnd either points to the next ", or */
-            /*            lexEnd points to \n or EOF. */
-            if (*(source + lexEnd) == '\n' || *(source + lexEnd) == '\0') {
-                tokType = TOKEN_UNKNOWN;
-                snprintf(errMsg, MAX_ERRMSG_LEN, "Unterminated string");
-                lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
-                lexEnd = srcLen;
-            } else {
-                /* make lexEnd point to the character AFTER the end quotes. */
-                lexEnd += 1; colNum += 1; 
-            }
-            break;
-        }
-        case '+':
-            /* Possible: +, += */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_PLUS_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_PLUS;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '-':
-            /* Possible: -, -= */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_MINUS_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_MINUS;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '*':
-            /* Possible: *, *= */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_STAR_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_STAR;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '/':
-            /* Possible: /, /=. // */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_SLASH_EQUAL;
-                lexEnd += 2;
-                colNum += 2;
-            } else if (lookahead2 == '/') {
-                /* Comment */
-                for (i = lexStart + 1; *(source + i) != '\n' && *(source + i) != '\0'; i++)
-                    lexEnd++; colNum++;
-                /* INVARIANT: Now lexEnd points at the newline/EOF character. */
-                lexEnd++; colNum++;
-            } else {
-                tokType = TOKEN_SLASH;
+                /* Iterate until end of string */
+                /* We want lexStart to be at the first ", and lexEnd to be AFTER the next ". */
                 lexEnd++;
                 colNum++;
-            }
-            break;
-        case '%':
-            /* Possible: %, %= */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_PERCENT_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_PERCENT;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '^':
-            /* Possible: ^, ^= */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_CARET_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_CARET;
-                lexEnd++; colNum++;
-            }
-            break;
-        case ':':
-            tokType = TOKEN_COLON;
-            lexEnd++; colNum++;
-            break;
-        case '.':
-            /* Possible: ., Number starting with . */
-            if (isDigit(lookahead2)) {
-                tokType = TOKEN_NUMBER;
-                lexEnd = lexNumber(source, srcLen, lexStart, &errLen, errMsg);
-                colNum += lexEnd - lexStart;
-                if (errLen > 0) {
+                for (i = lexStart + 1; *(source + i) != '"'; i++) {
+                    if (*(source + i) == '\n' || *(source + i) == '\0')
+                        break;
+                    lexEnd++;
+                    colNum++;
+                }
+
+                /* INVARIANT: lexEnd either points to the next ", or */
+                /*            lexEnd points to \n or EOF. */
+                if (*(source + lexEnd) == '\n' || *(source + lexEnd) == '\0') {
                     tokType = TOKEN_UNKNOWN;
+                    snprintf(errMsg, MAX_ERRMSG_LEN, "Unterminated string");
                     lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
+                    lexEnd = srcLen;
+                } else {
+                    /* make lexEnd point to the character AFTER the end quotes. */
+                    lexEnd += 1;
+                    colNum += 1;
                 }
-            } else {
-                tokType = TOKEN_PERIOD;
-                lexEnd++; colNum++;
+                break;
             }
-            break;
-        case ',':
-            tokType = TOKEN_COMMA;
-            lexEnd++; colNum++;
-            break;
-        case '=':
-            /* Possible: =, == */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_EQUAL_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_EQUAL;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '@':
-            tokType = TOKEN_AT;
-            lexEnd++; colNum++;
-            break;
-        case '!':
-            /* Possible: != */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_BANG_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                /* Unknown */
-                tokType = TOKEN_UNKNOWN;
-                snprintf(errMsg, MAX_ERRMSG_LEN, "Unexpected character %c", lookahead);
-                lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
-                lexEnd++; colNum++;
-            }
-            break;
-        case '>':
-            /* Possible: >, >= */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_GREATER_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_GREATER;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '<':
-            /* Possible: <, <= */
-            if (lookahead2 == '=') {
-                tokType = TOKEN_LESS_EQUAL;
-                lexEnd += 2; colNum += 2;
-            } else {
-                tokType = TOKEN_LESS;
-                lexEnd++; colNum++;
-            }
-            break;
-        case '(':
-            tokType = TOKEN_PAREN_L;
-            lexEnd++; colNum++;
-            break;
-        case ')':
-            tokType = TOKEN_PAREN_R;
-            lexEnd++; colNum++;
-            break;
-        case '[':
-            tokType = TOKEN_BRACK_L;
-            lexEnd++; colNum++;
-            break;
-        case ']':
-            tokType = TOKEN_BRACK_R;
-            lexEnd++; colNum++;
-            break;
-        case '{':
-            tokType = TOKEN_BRACE_L;
-            lexEnd++; colNum++;
-            break;
-        case '}':
-            tokType = TOKEN_BRACE_R;
-            lexEnd++; colNum++;
-            break;
-        case '\n':
-            tokType = TOKEN_NL;
-            lineNum++; colNum = 0;
-            lexEnd++;
-            break;
-        default:
-            if (isAlpha(lookahead)) {
-                /* Possible: Keyword, Identifier */
-                for (i = lexStart; isAlphaDigit(*(source + i)); i++) {
-                    lexEnd++; colNum++;
+            case '+':
+                /* Possible: +, += */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_PLUS_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_PLUS;
+                    lexEnd++;
+                    colNum++;
                 }
-                kwLen = lexEnd - lexStart;
-                tokType = matchKeywordOrIdentifier(source + lexStart, kwLen);
-            } else if (isDigit(lookahead)) {
-                /* Possible: Literal Number */
-                tokType = TOKEN_NUMBER;
-                lexEnd = lexNumber(source, srcLen, lexStart, &errLen, errMsg);
-                colNum += lexEnd - lexStart;  /* lexEnd and lexStart on same line, so colNum would be still correct */
-                if (errLen > 0) {
+                break;
+            case '-':
+                /* Possible: -, -= */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_MINUS_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_MINUS;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '*':
+                /* Possible: *, *= */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_STAR_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_STAR;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '/':
+                /* Possible: /, /=. // */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_SLASH_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else if (lookahead2 == '/') {
+                    /* Comment */
+                    for (i = lexStart + 1; *(source + i) != '\n' && *(source + i) != '\0'; i++)
+                        lexEnd++;
+                    colNum++;
+                    /* INVARIANT: Now lexEnd points at the newline/EOF character. */
+                    lexEnd++;
+                    colNum++;
+                } else {
+                    tokType = TOKEN_SLASH;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '%':
+                /* Possible: %, %= */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_PERCENT_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_PERCENT;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '^':
+                /* Possible: ^, ^= */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_CARET_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_CARET;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case ':':
+                tokType = TOKEN_COLON;
+                lexEnd++;
+                colNum++;
+                break;
+            case '.':
+                /* Possible: ., Number starting with . */
+                if (isDigit(lookahead2)) {
+                    tokType = TOKEN_NUMBER;
+                    lexEnd = lexNumber(source, srcLen, lexStart, &errLen, errMsg);
+                    colNum += lexEnd - lexStart;
+                    if (errLen > 0) {
+                        tokType = TOKEN_UNKNOWN;
+                        lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
+                    }
+                } else {
+                    tokType = TOKEN_PERIOD;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case ',':
+                tokType = TOKEN_COMMA;
+                lexEnd++;
+                colNum++;
+                break;
+            case '=':
+                /* Possible: =, == */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_EQUAL_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_EQUAL;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '@':
+                tokType = TOKEN_AT;
+                lexEnd++;
+                colNum++;
+                break;
+            case '!':
+                /* Possible: != */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_BANG_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    /* Unknown */
                     tokType = TOKEN_UNKNOWN;
+                    snprintf(errMsg, MAX_ERRMSG_LEN, "Unexpected character %c", lookahead);
                     lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
+                    lexEnd++;
+                    colNum++;
                 }
-            } else if (lookahead == ' ' || lookahead == '\t' || lookahead == '\r') {
-                /* Whitespace, ignore */
-                lexEnd++; colNum++;
-            } else {
-                /* Unknown */
-                tokType = TOKEN_UNKNOWN;
-                snprintf(errMsg, MAX_ERRMSG_LEN, "Unexpected character %c", lookahead);
-                lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
-                lexEnd++; colNum++;
-            }
+                break;
+            case '>':
+                /* Possible: >, >= */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_GREATER_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_GREATER;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '<':
+                /* Possible: <, <= */
+                if (lookahead2 == '=') {
+                    tokType = TOKEN_LESS_EQUAL;
+                    lexEnd += 2;
+                    colNum += 2;
+                } else {
+                    tokType = TOKEN_LESS;
+                    lexEnd++;
+                    colNum++;
+                }
+                break;
+            case '(':
+                tokType = TOKEN_PAREN_L;
+                lexEnd++;
+                colNum++;
+                break;
+            case ')':
+                tokType = TOKEN_PAREN_R;
+                lexEnd++;
+                colNum++;
+                break;
+            case '[':
+                tokType = TOKEN_BRACK_L;
+                lexEnd++;
+                colNum++;
+                break;
+            case ']':
+                tokType = TOKEN_BRACK_R;
+                lexEnd++;
+                colNum++;
+                break;
+            case '{':
+                tokType = TOKEN_BRACE_L;
+                lexEnd++;
+                colNum++;
+                break;
+            case '}':
+                tokType = TOKEN_BRACE_R;
+                lexEnd++;
+                colNum++;
+                break;
+            case '\n':
+                tokType = TOKEN_NL;
+                lineNum++;
+                colNum = 0;
+                lexEnd++;
+                break;
+            default:
+                if (isAlpha(lookahead)) {
+                    /* Possible: Keyword, Identifier */
+                    for (i = lexStart; isAlphaDigit(*(source + i)); i++) {
+                        lexEnd++;
+                        colNum++;
+                    }
+                    kwLen = lexEnd - lexStart;
+                    tokType = matchKeywordOrIdentifier(source + lexStart, kwLen);
+                } else if (isDigit(lookahead)) {
+                    /* Possible: Literal Number */
+                    tokType = TOKEN_NUMBER;
+                    lexEnd = lexNumber(source, srcLen, lexStart, &errLen, errMsg);
+                    colNum +=
+                            lexEnd - lexStart;  /* lexEnd and lexStart on same line, so colNum would be still correct */
+                    if (errLen > 0) {
+                        tokType = TOKEN_UNKNOWN;
+                        lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
+                    }
+                } else if (lookahead == ' ' || lookahead == '\t' || lookahead == '\r') {
+                    /* Whitespace, ignore */
+                    lexEnd++;
+                    colNum++;
+                } else {
+                    /* Unknown */
+                    tokType = TOKEN_UNKNOWN;
+                    snprintf(errMsg, MAX_ERRMSG_LEN, "Unexpected character %c", lookahead);
+                    lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
+                    lexEnd++;
+                    colNum++;
+                }
         }
 
         if (tokType != TOKEN_UNKNOWN) {
@@ -422,18 +457,20 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
     }
 
     /* Add NL token, if it doesn't already end with one */
-    
+
     if (*tokenCount > 0 && (*tokensPtr)[*(tokenCount) - 1]->type != TOKEN_NL) {
         *tokenCount += 2;
         *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
-        lineNum += 1; colNum = 0;
+        lineNum += 1;
+        colNum = 0;
         (*tokensPtr)[*(tokenCount) - 2] = token_new(TOKEN_NL, "\n", 1, lineNum, colNum);
-        lineNum += 1; colNum = 0;
+        lineNum += 1;
+        colNum = 0;
     } else {
         *tokenCount += 1;
         *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
     }
 
     /* Add EOF token */
-    (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum+1, 0);
+    (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum + 1, 0);
 }

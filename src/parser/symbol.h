@@ -1,5 +1,6 @@
 #ifndef _SYMBOL_H_
 #define _SYMBOL_H_
+
 #include <stdlib.h>
 #include "../lexer/token.h"
 
@@ -111,25 +112,25 @@ typedef enum {
     SYM_TERMINAL
 } SymbolType;
 
-static const char* SymbolTypeString[] = {
-    "SYM_START",
-    "SYM_LINE",
-    "SYM_ASMT", "SYM_STMT",
-    "SYM_EXPR_STMT", "SYM_PRNT_STMT",
-    "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK", "SYM_WHILE",
-    "SYM_BREAK", "SYM_CONTINUE", "SYM_RETURN",
-    "SYM_EXPR",
-    "SYM_FN_EXPR", "SYM_ARG_LIST", "SYM_ARG",
-    "SYM_OR_EXPR", "SYM_OR_EXPR_R",
-    "SYM_AND_EXPR", "SYM_AND_EXPR_R",
-    "SYM_LOG_UNARY",
-    "SYM_EQUALITY", "SYM_EQUALITY_R",
-    "SYM_COMPARISON", "SYM_COMPARISON_R",
-    "SYM_SUM", "SYM_SUM_R",
-    "SYM_TERM", "SYM_TERM_R",
-    "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY",
-    "SYM_FN_CALL", "SYM_FN_ARGS",
-    "SYM_TERMINAL",
+static const char *SymbolTypeString[] = {
+        "SYM_START",
+        "SYM_LINE",
+        "SYM_ASMT", "SYM_STMT",
+        "SYM_EXPR_STMT", "SYM_PRNT_STMT",
+        "SYM_IFSTMT", "SYM_ELSEIF", "SYM_ELSE", "SYM_BLOCK", "SYM_WHILE",
+        "SYM_BREAK", "SYM_CONTINUE", "SYM_RETURN",
+        "SYM_EXPR",
+        "SYM_FN_EXPR", "SYM_ARG_LIST", "SYM_ARG",
+        "SYM_OR_EXPR", "SYM_OR_EXPR_R",
+        "SYM_AND_EXPR", "SYM_AND_EXPR_R",
+        "SYM_LOG_UNARY",
+        "SYM_EQUALITY", "SYM_EQUALITY_R",
+        "SYM_COMPARISON", "SYM_COMPARISON_R",
+        "SYM_SUM", "SYM_SUM_R",
+        "SYM_TERM", "SYM_TERM_R",
+        "SYM_UNARY", "SYM_POWER", "SYM_PRIMARY",
+        "SYM_FN_CALL", "SYM_FN_ARGS",
+        "SYM_TERMINAL",
 };
 
 typedef struct _astnode {
@@ -141,9 +142,14 @@ typedef struct _astnode {
 } ASTNode;
 
 ASTNode *astnode_new(SymbolType type, Token *tok);
+
 ASTNode *astnode_clone(ASTNode *node);
+
 void astnode_free(ASTNode *node);
+
 void astnode_print(ASTNode *node);
+
+int astnode_isExpanded(ASTNode *node);
 
 /* Adds token with type as a child of this node. */
 void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok);
@@ -153,9 +159,7 @@ void astnode_addChildNode(ASTNode *parent, ASTNode *child);
 /* Adds a symbol with type `expectedType` as a child of this node. */
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType);
 
-void astnode_clearChildren(ASTNode *node);
-
 /* Converts from parse tree to AST (i.e. removes *_R nodes) */
-ASTNode* astnode_gen(ASTNode *node);
+ASTNode *astnode_gen(ASTNode *node);
 
 #endif

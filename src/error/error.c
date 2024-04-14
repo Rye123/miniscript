@@ -5,14 +5,12 @@
 
 ErrorContext *errorContext = NULL;
 
-void criticalError(const char *msg)
-{
+void criticalError(const char *msg) {
     log_message(&executionLogger, "Critical Error: %s", msg);
     exit(1);
 }
 
-void initErrorContext(const char *source)
-{
+void initErrorContext(const char *source) {
     if (errorContext != NULL)
         free(errorContext);
     errorContext = malloc(sizeof(ErrorContext));
@@ -21,8 +19,7 @@ void initErrorContext(const char *source)
     errorContext->source = source;
 }
 
-void _checkErrorContext(void)
-{
+void _checkErrorContext(void) {
     if (errorContext != NULL)
         return;
     if (errorContext->source != NULL)
@@ -30,8 +27,7 @@ void _checkErrorContext(void)
     criticalError("Error context not initialised.");
 }
 
-Error *error_new(ErrorType type, int lineNum, int colNum)
-{
+Error *error_new(ErrorType type, int lineNum, int colNum) {
     Error *err;
     _checkErrorContext();
     err = malloc(sizeof(Error));
@@ -43,8 +39,7 @@ Error *error_new(ErrorType type, int lineNum, int colNum)
     return err;
 }
 
-void error_string(Error *error, char *dest, size_t destLen)
-{
+void error_string(Error *error, char *dest, size_t destLen) {
     size_t i = 0;
     size_t j;
     size_t k;
@@ -70,10 +65,11 @@ void error_string(Error *error, char *dest, size_t destLen)
     i += typeSize;
 
     /* 2. Error location */
-    locSize = snprintf(dest + i, MAX_ERRTYPE_LEN - typeSize, " (Line %d, Column %d)", error->lineNum+1, error->colNum+1);
+    locSize = snprintf(dest + i, MAX_ERRTYPE_LEN - typeSize, " (Line %d, Column %d)", error->lineNum + 1,
+                       error->colNum + 1);
     i += locSize;
     dest[i] = ':';
-    dest[i+1] = ' ';
+    dest[i + 1] = ' ';
     i += 2;
 
     /* 2. Copy error message in */
@@ -90,7 +86,7 @@ void error_string(Error *error, char *dest, size_t destLen)
 
     dest[i] = '\n';
     i++;
-    
+
     /* 3.1. Identify the correct line */
     source = error->ctx->source;
     sourceLen = strlen(source);
@@ -103,7 +99,8 @@ void error_string(Error *error, char *dest, size_t destLen)
         if (curLine == error->lineNum) {
             /* At the desired line. */
             /* Need to identify the size of the line */
-            tgtIdxStart = j; tgtIdxEnd = j;
+            tgtIdxStart = j;
+            tgtIdxEnd = j;
             for (k = j; k < sourceLen; k++) {
                 c = *(source + k);
                 if (c == '\n' || c == '\0')
@@ -121,26 +118,25 @@ void error_string(Error *error, char *dest, size_t destLen)
     tgtLineSz = tgtIdxEnd - tgtIdxStart;
     if (tgtLineSz > MAX_ERRCTX_LEN) {
         /* Don't bother printing, too long */
-        dest[i-1] = '\0';
+        dest[i - 1] = '\0';
         return;
     }
     strncpy(dest + i, source + tgtIdxStart, tgtLineSz);
     i += tgtLineSz;
-    
+
     /* 3.3. Add the caret */
     dest[i] = '\n';
     i++;
 
     for (k = 0; k < error->colNum; k++) {
-        dest[i+k] = ' ';
+        dest[i + k] = ' ';
     }
     i += error->colNum;
     dest[i] = '^';
-    dest[i+1] = '\0';
+    dest[i + 1] = '\0';
 }
 
-void error_free(Error *err)
-{
+void error_free(Error *err) {
     if (err)
         free(err);
 }
