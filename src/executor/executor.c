@@ -119,6 +119,9 @@ ExecValue *execFnCall(Context* ctx, ASTNode *fnCall)
     // Get identifier, check in ctx
     ExecValue *identifier = execTerminal(ctx, fnCall->children[0]);
     ExecValue *val = context_getValue(ctx, identifier);
+    if (val == NULL && ctx->global != NULL)
+        val = context_getValue(ctx->global, identifier);
+    
     if (val == NULL) {
         Error *typeErr = error_new(ERR_RUNTIME_TYPE, -1, -1);
         snprintf(typeErr->message, MAX_ERRMSG_LEN, "No such identifier %s", identifier->value.identifier_name);
