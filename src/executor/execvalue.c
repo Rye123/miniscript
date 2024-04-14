@@ -217,6 +217,32 @@ ExecValue* value_opAdd(ExecValue *e1, ExecValue *e2)
         ExecValue *resultVal = value_newString(result, e1->tok);
         free(result);
         return resultVal;
+    } else if (e1->type == TYPE_STRING && e2->type == TYPE_NUMBER) {
+        char *s1 = e1->value.literal_str;
+        // get the length of the double
+        size_t s1Len = strlen(s1);
+        size_t s2Len = snprintf(NULL, 0, "%g", e2->value.literal_num);
+        size_t resultLen = s1Len + s2Len;
+        char *result = malloc((resultLen + 1) * sizeof(char));
+        strncpy(result, s1, s1Len);
+        snprintf(result + s1Len, s2Len + 1, "%g", e2->value.literal_num);
+        result[resultLen] = '\0';
+        ExecValue *resultVal = value_newString(result, e1->tok);
+        free(result);
+        return resultVal;
+    } else if (e1->type == TYPE_NUMBER && e2->type == TYPE_STRING) {
+        char *s2 = e2->value.literal_str;
+        // get the length of the double
+        size_t s2Len = strlen(s2);
+        size_t s1Len = snprintf(NULL, 0, "%g", e1->value.literal_num);
+        size_t resultLen = s1Len + s2Len;
+        char *result = malloc((resultLen + 1) * sizeof(char));
+        snprintf(result, s1Len + 1, "%g", e1->value.literal_num);
+        strncpy(result + s1Len, s2, s2Len);
+        result[resultLen] = '\0';
+        ExecValue *resultVal = value_newString(result, e1->tok);
+        free(result);
+        return resultVal;
     }
 
     // Invalid types
