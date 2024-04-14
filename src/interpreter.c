@@ -57,13 +57,14 @@ void reportError(const char *msg)
     log_message(&executionLogger, "%s\n", msg);
 }
 
-// Returns true if expecting more input
+/* Returns true if expecting more input */
 int runLine(const char *source, Context *executionContext, int asREPL)
 {
     int success;
     FSM fsm;
     size_t tokenCount;
     size_t errorCount;
+    size_t i;
     Token **tokens;
     Error **errors;
     char errStr[MAX_ERRSTR_LEN];
@@ -76,7 +77,7 @@ int runLine(const char *source, Context *executionContext, int asREPL)
     while (fsm.current_state != CLEANING) {
         switch (fsm.current_state) {
             case INIT:
-                // 0. Initialisation
+                /* 0. Initialisation */
                 success = 1;
                 tokenCount = 0;
                 errorCount = 0;
@@ -95,7 +96,7 @@ int runLine(const char *source, Context *executionContext, int asREPL)
 
                 log_message(&executionLogger, "--- LEXING RESULT ---\n");
                 log_message(&executionLogger, "Token Count: %lu\n", tokenCount);
-                for (size_t i = 0; i < tokenCount; i++)
+                for (i = 0; i < tokenCount; i++)
                     token_print(tokens[i]);
 
                 transition(&fsm, !lexResult.hasError);
@@ -107,7 +108,7 @@ int runLine(const char *source, Context *executionContext, int asREPL)
 
                 if (errorCount != 0) {
                     char errStr[MAX_ERRSTR_LEN];
-                    for (size_t i = 0; i < errorCount; i++) {
+                    for (i = 0; i < errorCount; i++) {
                         error_string(errors[i], errStr, MAX_ERRSTR_LEN);
                         reportError(errStr);
                         error_free(errors[i]);
@@ -125,7 +126,7 @@ int runLine(const char *source, Context *executionContext, int asREPL)
 
                 if (parseError != NULL) {
                     if (parseError->type == ERR_SYNTAX_EOF && asREPL) {
-                        // Only ask for more input if this is in REPL mode.
+                        /* Only ask for more input if this is in REPL mode. */
                         error_free(parseError);
                         astnode_free(root);
                         return 1;
@@ -172,9 +173,9 @@ int runLine(const char *source, Context *executionContext, int asREPL)
     }
 
     if (fsm.current_state == CLEANING) {
-        // 4. Clean up
+        /* 4. Clean up */
         astnode_free(root);
-        for (size_t i = 0; i < tokenCount; i++)
+        for (i = 0; i < tokenCount; i++)
             token_free(tokens[i]);
         free(tokens);
         free(errorContext);
@@ -185,60 +186,63 @@ int runLine(const char *source, Context *executionContext, int asREPL)
 
 void runFile(const char* fname)
 {
+    Context *globalCtx;
     FILE *srcFile = fopen(fname, "r");
     long fileSz = 0;
     char *source;
+    size_t totalSz;
     if (srcFile == NULL) {
         fprintf(stderr, "Error opening %s: %s\n", fname, strerror(errno));
         exit(errno);
     }
 
-    // Get size of file
+    /* Get size of file */
     fseek(srcFile, 0, SEEK_END);
     fileSz = ftell(srcFile);
     fseek(srcFile, 0, SEEK_SET);
 
-    // Allocate space for file's contents
+    /* Allocate space for file's contents */
     source = malloc((fileSz * sizeof(char)) + 1);
     if (source == NULL) {
         fprintf(stderr, "Error allocating memory for file %s: %s\n", fname, strerror(errno));
         exit(errno);
     }
 
-    // Fill buffer with contents of file
-    size_t totalSz = fread(source, sizeof(char), fileSz, srcFile);
+    /* Fill buffer with contents of file */
+    totalSz = fread(source, sizeof(char), fileSz, srcFile);
     source[totalSz] = '\0';
     fclose(srcFile);
 
-    // Run the entire file.
-    Context *globalCtx = context_new(NULL, NULL);
+    /* Run the entire file. */
+    globalCtx = context_new(NULL, NULL);
     runLine(source, globalCtx, 0);
 }
 
-void runREPL()
+void runREPL(void)
 {
-    Context *globalCtx = context_new(NULL, NULL);
-    log_message(&consoleLogger, "Miniscript 0.1\n");
-
     char source[REPL_BUF_MAX];
+    Context *globalCtx = context_new(NULL, NULL);
     size_t sourceSz = 0;
+    size_t bufSz;
     char buffer[LINE_MAX];
     memset(source, 0, REPL_BUF_MAX);
+
+    log_message(&consoleLogger, "Miniscript 0.1\n");
     while (1) {
         if (strcmp(buffer, "exit\n") == 0) {
             break;
         }
 
         if (sourceSz > 0)
-            log_message(&consoleLogger, ".. "); // Prompt for more input
+            log_message(&consoleLogger, ".. "); /* Prompt for more input */
         else
-            log_message(&consoleLogger, ">> "); // Standard prompt
+            log_message(&consoleLogger, ">> "); /* Standard prompt */
 
         if (fgets(buffer, LINE_MAX, stdin) == NULL)
             break;
 
-        // Store existing buffer data into source
-        size_t bufSz = strnlen(buffer, LINE_MAX);
+        /* Store existing buffer data into source */
+        bufSz = strnlen(buffer, LINE_MAX);
         if (bufSz > (REPL_BUF_MAX - sourceSz))
             criticalError("Too much input in REPL buffer, increase REPL_BUF_MAX.");
         
@@ -246,7 +250,7 @@ void runREPL()
         sourceSz += bufSz;
 
         if (!runLine(source, globalCtx, 1)) {
-            // Not expecting any more input
+            /* Not expecting any more input */
             sourceSz = 0;
             memset(source, 0, REPL_BUF_MAX);
             log_message(&executionLogger, "\n\n");

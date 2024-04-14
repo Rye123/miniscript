@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../logger/logger.h"
@@ -20,10 +19,11 @@ ASTNode *astnode_new(SymbolType type, Token *tok)
 
 ASTNode *astnode_clone(ASTNode *node)
 {
+    size_t i;
     ASTNode *new = astnode_new(node->type, node->tok);
 
-    // Loop through children and copy
-    for (size_t i = 0; i < node->numChildren; i++)
+    /*  Loop through children and copy */
+    for (i = 0; i < node->numChildren; i++)
         astnode_addChildNode(new, astnode_clone(node->children[i]));
 
     return new;
@@ -31,13 +31,14 @@ ASTNode *astnode_clone(ASTNode *node)
 
 void astnode_free(ASTNode *node)
 {
-    // Loop through children and free
-    for (size_t i = 0; i < node->numChildren; i++) {
+    size_t i;
+    /*  Loop through children and free */
+    for (i = 0; i < node->numChildren; i++) {
         ASTNode *child = node->children[i];
         astnode_free(child);
     }
 
-    // Free self
+    /*  Free self */
     if (node->tok != NULL)
         token_free(node->tok);
     free(node->children);
@@ -46,6 +47,7 @@ void astnode_free(ASTNode *node)
 
 void astnode_print(ASTNode *node)
 {
+    size_t i;
     if (node->type == SYM_TERMINAL) {
         if (node->tok->type == TOKEN_NL)
             log_message(&executionLogger, "%s(%s('\\n'))", SymbolTypeString[node->type], TokenTypeString[node->tok->type]);
@@ -61,7 +63,7 @@ void astnode_print(ASTNode *node)
 
     if (node->numChildren > 0) {
         log_message(&executionLogger, "(");
-        for (size_t i = 0; i < (node->numChildren) - 1; i++) {
+        for (i = 0; i < (node->numChildren) - 1; i++) {
             astnode_print(node->children[i]);
             log_message(&executionLogger, " ");
         }
@@ -72,16 +74,19 @@ void astnode_print(ASTNode *node)
 
 int astnode_isExpanded(ASTNode *node)
 {
+    size_t i;
+    ASTNode *child;
+
     if (node->type == SYM_TERMINAL)
         return node->tok != NULL;
 
-    // We expect a nonterminal to have children
+    /*  We expect a nonterminal to have children */
     if (node->numChildren == 0)
         return 0;
 
-    // Otherwise, loop through children
-    for (size_t i = 0; i < node->numChildren; i++) {
-        ASTNode *child = node->children[i];
+    /*  Otherwise, loop through children */
+    for (i = 0; i < node->numChildren; i++) {
+        child = node->children[i];
         if (!astnode_isExpanded(child))
             return 0;
     }
@@ -105,21 +110,23 @@ void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok)
 
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType) { astnode_addChild(node, expectedType, NULL); }
 
-// Removes all *_R nodes from the parse tree to clean it up.
+/*  Removes all *_R nodes from the parse tree to clean it up. */
 void _astnode_remove_rec(ASTNode *node)
 {
+    size_t i;
+    size_t j;
     size_t numChildren = node->numChildren;
+    ASTNode *child;
     ASTNode **children   = malloc(sizeof(ASTNode *) * numChildren);
+
     memcpy(children, node->children, sizeof(ASTNode *) * numChildren);
-    
     node->numChildren = 0;
     node->children = realloc(node->children, 0);
-    for (size_t i = 0; i < numChildren; i++) {
-        ASTNode *child = children[i];
-        // Expand the child prior to expansion
+    for (i = 0; i < numChildren; i++) {
+        child = children[i];
+        /*  Expand the child prior to expansion */
         _astnode_remove_rec(child);
 	
-        SymbolType childType = children[i]->type;
         switch (child->type) {
         case SYM_OR_EXPR_R:
         case SYM_AND_EXPR_R:
@@ -128,22 +135,22 @@ void _astnode_remove_rec(ASTNode *node)
         case SYM_SUM_R:
         case SYM_TERM_R:
             if (child->numChildren > 0) {
-                // Shift children up
-                //log_message(&executionLogger, "\tAdd %lu children from %s\n", child->numChildren, SymbolTypeString[childType]);
-                for (size_t j = 0; j < child->numChildren; j++)
+                /*  Shift children up */
+                /* log_message(&executionLogger, "\tAdd %lu children from %s\n", child->numChildren, SymbolTypeString[childType]); */
+                for (j = 0; j < child->numChildren; j++)
                     astnode_addChildNode(node, child->children[j]);
             }
             break;
 	    
         default:
-            //log_message(&executionLogger, "\tAdd node %s\n", SymbolTypeString[childType]);
+            /* log_message(&executionLogger, "\tAdd node %s\n", SymbolTypeString[childType]); */
             astnode_addChildNode(node, child);
         }
     }
     
 }
 
-// Rebalances a given node such that its subtree is left-skewed with respect to others of the same type.
+/*  Rebalances a given node such that its subtree is left-skewed with respect to others of the same type. */
 void _astnode_left_skew(ASTNode *node, SymbolType targetType)
 {
     /*
@@ -173,10 +180,19 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
       |
       TERM1	   
     */
+    size_t i;
     size_t childIndex = -1;
     ASTNode *curNode = NULL;
-    // Identify target node
-    for (size_t i = 0; i < node->numChildren; i++) {
+    ASTNode *rightChild = NULL;
+    ASTNode *curOp = NULL;
+    ASTNode *nextRightChild = NULL;
+    ASTNode *nextOp = NULL;
+    size_t rcNumChildren;
+    ASTNode **rcChildren;
+
+
+    /*  Identify target node */
+    for (i = 0; i < node->numChildren; i++) {
         if (node->children[i]->type == targetType) {
             curNode = node->children[i];
             childIndex = i;
@@ -189,9 +205,7 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
         exit(1);
     }
 
-    // Invariant: curNode is either a node with ONE child or THREE
-    ASTNode *rightChild = NULL;
-    ASTNode *curOp = NULL;
+    /*  Invariant: curNode is either a node with ONE child or THREE */
     if (curNode->numChildren != 1 && curNode->numChildren != 3) {
         log_message(&executionLogger, "_astnode_left_skew Critical Error: Given invalid number of children for curNode, curNode: %s, targetType: %s\n", SymbolTypeString[curNode->type], SymbolTypeString[targetType]);
         exit(1);
@@ -202,11 +216,8 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
     }
     
     while (rightChild != NULL) {
-        ASTNode *nextRightChild = NULL;
-        ASTNode *nextOp = NULL;
-
-        // 0. Get rightChild and op for the NEXT iteration, since this operation would modify the children of rightChild
-        // rightChild is either a node of the same type with either ONE child or THREE. If ONE child, then can leave as NULL -- next operation will end
+        /*  0. Get rightChild and op for the NEXT iteration, since this operation would modify the children of rightChild */
+        /*  rightChild is either a node of the same type with either ONE child or THREE. If ONE child, then can leave as NULL -- next operation will end */
         if (rightChild->numChildren != 1 && rightChild->numChildren != 3 && rightChild->type != targetType) {
             log_message(&executionLogger, "_astnode_left_skew Critical Error: Given invalid number of children for rightChild of curNode, rightChild: %s, curNode: %s, targetType: %s\n",
                    SymbolTypeString[rightChild->type],
@@ -221,45 +232,45 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
             nextOp = rightChild->children[1];
         }
 
-        // Invariant: curNode: ..., lChild, op, rChild.
-        //                     rChild is same type as curNode
-        //             rChild: lChildR, opR, rChildR
-        //                               OR
-        //                     childR
-        //     Note: The "..." is the intermediate result of the PREVIOUS operation. At the start, it's empty
-        // We want to rotate the tree, so that curNode becomes the left child of rChild
-        // Further, op should become the SECOND child of rChild (after curNode)
-        // End State:
-        //            curNode: ..., lChild
-        //             rChild: curNode, op, lChildR, opR, rChildR
-        //      Note: Notice that the "..." is curNode, op from this operation.
-        //            In the next operation, rChild effectively becomes:
-        //             rChild: curNode, op, lChildR
-        //            Which is the CORRECT way to evaluate a left-recursive rule.
+        /*  Invariant: curNode: ..., lChild, op, rChild. */
+        /*                      rChild is same type as curNode */
+        /*              rChild: lChildR, opR, rChildR */
+        /*                                OR */
+        /*                      childR */
+        /*      Note: The "..." is the intermediate result of the PREVIOUS operation. At the start, it's empty */
+        /*  We want to rotate the tree, so that curNode becomes the left child of rChild */
+        /*  Further, op should become the SECOND child of rChild (after curNode) */
+        /*  End State: */
+        /*             curNode: ..., lChild */
+        /*              rChild: curNode, op, lChildR, opR, rChildR */
+        /*       Note: Notice that the "..." is curNode, op from this operation. */
+        /*             In the next operation, rChild effectively becomes: */
+        /*              rChild: curNode, op, lChildR */
+        /*             Which is the CORRECT way to evaluate a left-recursive rule. */
 
-        // 1. Remove op, rChild from curNode (invariant: curNode is ..., lChild, op, rChild)
+        /*  1. Remove op, rChild from curNode (invariant: curNode is ..., lChild, op, rChild) */
         curNode->numChildren -= 2;
         curNode->children = realloc(curNode->children, sizeof(ASTNode) * curNode->numChildren);
 
-        // 2. Store right child's current children
-        size_t rcNumChildren = rightChild->numChildren;
-        ASTNode **rcChildren = malloc(sizeof(ASTNode *) * rcNumChildren);
+        /*  2. Store right child's current children */
+        rcNumChildren = rightChild->numChildren;
+        rcChildren = malloc(sizeof(ASTNode *) * rcNumChildren);
         rcChildren = memcpy(rcChildren, rightChild->children, sizeof(ASTNode *) * rcNumChildren);
 
-        // 3. Reorder right child's children such that:
-        //    Original: lChildR, opR, rChildR
-        //         New: curNode, op, lChildR, opR, rChildR
+        /*  3. Reorder right child's children such that: */
+        /*     Original: lChildR, opR, rChildR */
+        /*          New: curNode, op, lChildR, opR, rChildR */
         rightChild->numChildren = 0;
         rightChild->children = realloc(rightChild->children, 0);
         astnode_addChildNode(rightChild, curNode);
         astnode_addChildNode(rightChild, curOp);
-        for (size_t i = 0; i < rcNumChildren; i++)
+        for (i = 0; i < rcNumChildren; i++)
             astnode_addChildNode(rightChild, rcChildren[i]);
 
-        // 4. Cleanup
+        /*  4. Cleanup */
         free(rcChildren);
 
-        // 5. Ensure invariant
+        /*  5. Ensure invariant */
         curNode = rightChild;
         curOp = nextOp;
         rightChild = nextRightChild;
@@ -267,18 +278,20 @@ void _astnode_left_skew(ASTNode *node, SymbolType targetType)
     }
 }
 
-// Recursively applies the left skewing on left-recursive production rules.
+/*  Recursively applies the left skewing on left-recursive production rules. */
 void _astnode_left_skew_rec(ASTNode *node)
 {
+    size_t i;
+
     if (node->type == SYM_TERMINAL)
         return;
-    for (size_t i = 0; i < node->numChildren; i++) {
-        //log_message(&executionLogger, "node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i);
+    for (i = 0; i < node->numChildren; i++) {
+        /* log_message(&executionLogger, "node %s, numChildren %lu, i %lu\n", SymbolTypeString[node->type], node->numChildren, i); */
         _astnode_left_skew_rec(node->children[i]);
     }
     switch (node->type) {
     case SYM_EXPR:
-        // Children could be OR_EXPR, or FN_EXPR
+        /*  Children could be OR_EXPR, or FN_EXPR */
         if (node->children[0]->type == SYM_OR_EXPR)
             _astnode_left_skew(node, SYM_OR_EXPR);
         break;
@@ -286,7 +299,7 @@ void _astnode_left_skew_rec(ASTNode *node)
         _astnode_left_skew(node, SYM_AND_EXPR);
         break;
     case SYM_LOG_UNARY:
-        // Children could be "not" LOG_UNARY, or EQUALITY
+        /*  Children could be "not" LOG_UNARY, or EQUALITY */
         if (node->numChildren == 1)
             _astnode_left_skew(node, SYM_EQUALITY);
         break;
@@ -307,9 +320,9 @@ void _astnode_left_skew_rec(ASTNode *node)
 ASTNode *astnode_gen(ASTNode *node)
 {
     _astnode_remove_rec(node);
-    //astnode_print(node)
+    /* astnode_print(node) */
 
-    // 1. Recursively rebalance tree so that it's left-skewed.
+    /*  1. Recursively rebalance tree so that it's left-skewed. */
     _astnode_left_skew_rec(node);
 
     return node;

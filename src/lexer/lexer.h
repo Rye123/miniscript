@@ -15,7 +15,7 @@ void initLexResult(LexResult *lexResult);
 void lexResultUpdate(LexResult *lexerResult, int hasError, const char *errStr, int lineNum, int colNum);
 
 
-// Adds a lexer error to the list.
+/* Adds a lexer error to the list. */
 void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount);
 
 /*

@@ -8,7 +8,7 @@
 void initLexResult(LexResult *lexResult) {
     if (lexResult == NULL) return;
     lexResult->hasError = 0;
-    memset(lexResult->errorMessage, 0, MAX_ERRMSG_LEN);  // Clearing the error message array
+    memset(lexResult->errorMessage, 0, MAX_ERRMSG_LEN);  /* Clearing the error message array */
     lexResult->lineNum = 0;
     lexResult->colNum = 0;
 }
@@ -16,7 +16,7 @@ void initLexResult(LexResult *lexResult) {
 void lexResultUpdate(LexResult *lexResult, int hasError, const char *errStr, int lineNum, int colNum)
 {
     lexResult->hasError = hasError;
-    sprintf(lexResult->errorMessage, "%s", errStr);
+    snprintf(lexResult->errorMessage, MAX_ERRMSG_LEN, "%s", errStr);
     lexResult->lineNum = lineNum;
     lexResult->colNum = colNum;
 }
@@ -24,15 +24,15 @@ void lexResultUpdate(LexResult *lexResult, int hasError, const char *errStr, int
 void lexError(const char *errStr, int lineNum, int colNum, const Error ***errorsPtr, size_t *errorCount)
 {
     Error *err = error_new(ERR_TOKEN, lineNum, colNum);
-    sprintf(err->message, "%s", errStr);
+    snprintf(err->message, MAX_ERRMSG_LEN, "%s", errStr);
 
-    // Add Error to list
+    /* Add Error to list */
     *errorCount = *errorCount + 1;
     *errorsPtr = realloc(*errorsPtr, sizeof(Error *) * (*errorCount));
     (*errorsPtr)[*(errorCount) - 1] = err;
 }
 
-// Returns true if candidate is an exact match for expected
+/* Returns true if candidate is an exact match for expected */
 int strnncmp(const char *candidate, size_t candidateLen, const char *expected, const size_t expectedLen)
 {
     if (candidateLen != expectedLen)
@@ -91,116 +91,129 @@ int isDigit(char c) { return (c >= '0') && (c <= '9'); }
 int isAlpha(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
 int isAlphaDigit(char c) { return isDigit(c) || isAlpha(c); }
 
-// Lexes a single number, starting from lexStart. Returns the position of the end of the lexeme.
+/* Lexes a single number, starting from lexStart. Returns the position of the end of the lexeme. */
 size_t lexNumber(const char *source, size_t srcLen, size_t lexStart, size_t *errLen, char *errMsg)
 {
     size_t lexEnd = lexStart;
-    // Scan until not digit
-    for (size_t i = lexStart; isDigit(*(source + i)); i++)
+    size_t i;
+    size_t dotPosition;
+    size_t ePosition;
+    char lookahead1;
+    char lookahead2;
+
+    /* Scan until not digit */
+    for (i = lexStart; isDigit(*(source + i)); i++)
         lexEnd++;
 
-    // Check for floating point
+    /* Check for floating point */
     if (*(source + lexEnd) == '.') {
-        size_t dotPosition = lexEnd;
+        dotPosition = lexEnd;
         lexEnd++;
-        // Scan until not digit
-        for (size_t i = lexEnd; isDigit(*(source + i)); i++)
+        /* Scan until not digit */
+        for (i = lexEnd; isDigit(*(source + i)); i++)
             lexEnd++;
 
-        // Here, if characters AFTER the dot are NOT digits, then this is a method call (i.e. 1.fn should be parsed as number, dot, identifier)
+        /* Here, if characters AFTER the dot are NOT digits, then this is a method call (i.e. 1.fn should be parsed as number, dot, identifier) */
         if (lexEnd == dotPosition)
             return lexEnd;
     }
 
-    // Check for scientific notation
+    /* Check for scientific notation */
     if (*(source + lexEnd) == 'e' || *(source + lexEnd) == 'E') {
-        size_t ePosition = lexEnd;
-        char lookahead1 = (ePosition + 1 >= srcLen) ? '\0' : *(source + ePosition + 1);
-        char lookahead2 = (ePosition + 2 >= srcLen) ? '\0' : *(source + ePosition + 2);
+        ePosition = lexEnd;
+        lookahead1 = (ePosition + 1 >= srcLen) ? '\0' : *(source + ePosition + 1);
+        lookahead2 = (ePosition + 2 >= srcLen) ? '\0' : *(source + ePosition + 2);
 
         if (lookahead1 == '-') {
-            // Lex a negative exponent
+            /* Lex a negative exponent */
             if (!isDigit(lookahead2)) {
-                // Here, we have something like "1e-a" -- we expect a digit for
-                // the negative exponent, but we got some other character instead
-                sprintf(errMsg, "Invalid scientific notation, expected digit after '-', instead got '%c'", lookahead2);
+                /* Here, we have something like "1e-a" -- we expect a digit for */
+                /* the negative exponent, but we got some other character instead */
+                snprintf(errMsg, MAX_ERRMSG_LEN, "Invalid scientific notation, expected digit after '-', instead got '%c'", lookahead2);
                 *errLen = strlen(errMsg);
                 lexEnd++;
                 return lexEnd;
             }
 
-            // Shift lexEnd to be after the "e-"
+            /* Shift lexEnd to be after the "e-" */
             lexEnd += 2;
         } else if (lookahead1 == '+') {
-            // Lex a positive exponent
+            /* Lex a positive exponent */
             if (!isDigit(lookahead2)) {
-                // Here, we have something like "1e+a" -- we expect a digit for
-                // the negative exponent, but we got some other character instead
-                sprintf(errMsg, "Invalid scientific notation, expected digit after '+', instead got '%c'", lookahead2);
+                /* Here, we have something like "1e+a" -- we expect a digit for */
+                /* the negative exponent, but we got some other character instead */
+                snprintf(errMsg, MAX_ERRMSG_LEN, "Invalid scientific notation, expected digit after '+', instead got '%c'", lookahead2);
                 *errLen = strlen(errMsg);
                 lexEnd++;
                 return lexEnd;
             }
-            // Shift lexEnd to be after the "e+"
+            /* Shift lexEnd to be after the "e+" */
             lexEnd += 2;
         } else {
-            // Shift lexEnd to be after the "e"
+            /* Shift lexEnd to be after the "e" */
             lexEnd++;
         }
-        // Lex rest of exponent
-        for (size_t i = lexEnd; isDigit(*(source + i)); i++)
+        /* Lex rest of exponent */
+        for (i = lexEnd; isDigit(*(source + i)); i++)
             lexEnd++;
     }
     return lexEnd;
 }
 
 void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexResult *lexResult){
+    size_t i;
     size_t srcLen = strlen(source);
     int lineNum = 0;
     int colNum = 0;
     char *errMsg;
     size_t errLen = 0;
+    size_t lexemeLen;
+    size_t lexStart = 0;  /* Start of the lexeme */
+    size_t lexEnd;   /* End of the lexeme */
+    size_t kwLen;
 
-    size_t lexStart = 0;  // Start of the lexeme
-    size_t lexEnd;   // End of the lexeme
+    TokenType tokType;
+    char lookahead;
+    char lookahead2;
+
     while (lexStart < srcLen) {
-        TokenType tokType = TOKEN_UNKNOWN;
-        char lookahead = *(source + lexStart);
-        char lookahead2 = (lexStart >= srcLen) ? '\0' : *(source + lexStart + 1);
+        tokType = TOKEN_UNKNOWN;
+        lookahead = *(source + lexStart);
+        lookahead2 = (lexStart >= srcLen) ? '\0' : *(source + lexStart + 1);
         errMsg = calloc(MAX_ERRMSG_LEN, sizeof(char));
         errLen = 0;
         lexEnd = lexStart;
 
-        // Scan a single lexeme
+        /* Scan a single lexeme */
         switch (lookahead) {
         case '"': {
-            // Possible: Literal String (Note: "'" is not recognised)
+            /* Possible: Literal String (Note: "'" is not recognised) */
             tokType = TOKEN_STRING;
 
-            // Iterate until end of string
-            // We want lexStart to be at the first ", and lexEnd to be AFTER the next ".
+            /* Iterate until end of string */
+            /* We want lexStart to be at the first ", and lexEnd to be AFTER the next ". */
             lexEnd++; colNum++;
-            for (size_t i = lexStart + 1; *(source + i) != '"'; i++) {
+            for (i = lexStart + 1; *(source + i) != '"'; i++) {
                 if (*(source + i) == '\n' || *(source + i) == '\0')
                     break;
                 lexEnd++; colNum++;
             }
 
-            // INVARIANT: lexEnd either points to the next ", or
-            //            lexEnd points to \n or EOF.
+            /* INVARIANT: lexEnd either points to the next ", or */
+            /*            lexEnd points to \n or EOF. */
             if (*(source + lexEnd) == '\n' || *(source + lexEnd) == '\0') {
                 tokType = TOKEN_UNKNOWN;
-                sprintf(errMsg, "Unterminated string");
+                snprintf(errMsg, MAX_ERRMSG_LEN, "Unterminated string");
                 lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd = srcLen;
             } else {
-                // make lexEnd point to the character AFTER the end quotes.
+                /* make lexEnd point to the character AFTER the end quotes. */
                 lexEnd += 1; colNum += 1; 
             }
             break;
         }
         case '+':
-            // Possible: +, +=
+            /* Possible: +, += */
             if (lookahead2 == '=') {
                 tokType = TOKEN_PLUS_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -210,7 +223,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             }
             break;
         case '-':
-            // Possible: -, -=
+            /* Possible: -, -= */
             if (lookahead2 == '=') {
                 tokType = TOKEN_MINUS_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -220,7 +233,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             }
             break;
         case '*':
-            // Possible: *, *=
+            /* Possible: *, *= */
             if (lookahead2 == '=') {
                 tokType = TOKEN_STAR_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -230,16 +243,16 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             }
             break;
         case '/':
-            // Possible: /, /=. //
+            /* Possible: /, /=. // */
             if (lookahead2 == '=') {
                 tokType = TOKEN_SLASH_EQUAL;
                 lexEnd += 2;
                 colNum += 2;
             } else if (lookahead2 == '/') {
-                // Comment
-                for (int i = lexStart + 1; *(source + i) != '\n' && *(source + i) != '\0'; i++)
+                /* Comment */
+                for (i = lexStart + 1; *(source + i) != '\n' && *(source + i) != '\0'; i++)
                     lexEnd++; colNum++;
-                // INVARIANT: Now lexEnd points at the newline/EOF character.
+                /* INVARIANT: Now lexEnd points at the newline/EOF character. */
                 lexEnd++; colNum++;
             } else {
                 tokType = TOKEN_SLASH;
@@ -248,7 +261,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             }
             break;
         case '%':
-            // Possible: %, %=
+            /* Possible: %, %= */
             if (lookahead2 == '=') {
                 tokType = TOKEN_PERCENT_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -258,7 +271,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             }
             break;
         case '^':
-            // Possible: ^, ^=
+            /* Possible: ^, ^= */
             if (lookahead2 == '=') {
                 tokType = TOKEN_CARET_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -272,7 +285,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             lexEnd++; colNum++;
             break;
         case '.':
-            // Possible: ., Number starting with .
+            /* Possible: ., Number starting with . */
             if (isDigit(lookahead2)) {
                 tokType = TOKEN_NUMBER;
                 lexEnd = lexNumber(source, srcLen, lexStart, &errLen, errMsg);
@@ -291,7 +304,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             lexEnd++; colNum++;
             break;
         case '=':
-            // Possible: =, ==
+            /* Possible: =, == */
             if (lookahead2 == '=') {
                 tokType = TOKEN_EQUAL_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -305,20 +318,20 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             lexEnd++; colNum++;
             break;
         case '!':
-            // Possible: !=
+            /* Possible: != */
             if (lookahead2 == '=') {
                 tokType = TOKEN_BANG_EQUAL;
                 lexEnd += 2; colNum += 2;
             } else {
-                // Unknown
+                /* Unknown */
                 tokType = TOKEN_UNKNOWN;
-                sprintf(errMsg, "Unexpected character %c", lookahead);
+                snprintf(errMsg, MAX_ERRMSG_LEN, "Unexpected character %c", lookahead);
                 lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd++; colNum++;
             }
             break;
         case '>':
-            // Possible: >, >=
+            /* Possible: >, >= */
             if (lookahead2 == '=') {
                 tokType = TOKEN_GREATER_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -328,7 +341,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             }
             break;
         case '<':
-            // Possible: <, <=
+            /* Possible: <, <= */
             if (lookahead2 == '=') {
                 tokType = TOKEN_LESS_EQUAL;
                 lexEnd += 2; colNum += 2;
@@ -368,38 +381,38 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
             break;
         default:
             if (isAlpha(lookahead)) {
-                // Possible: Keyword, Identifier
-                for (size_t i = lexStart; isAlphaDigit(*(source + i)); i++) {
+                /* Possible: Keyword, Identifier */
+                for (i = lexStart; isAlphaDigit(*(source + i)); i++) {
                     lexEnd++; colNum++;
                 }
-                size_t kwLen = lexEnd - lexStart;
+                kwLen = lexEnd - lexStart;
                 tokType = matchKeywordOrIdentifier(source + lexStart, kwLen);
             } else if (isDigit(lookahead)) {
-                // Possible: Literal Number
+                /* Possible: Literal Number */
                 tokType = TOKEN_NUMBER;
                 lexEnd = lexNumber(source, srcLen, lexStart, &errLen, errMsg);
-                colNum += lexEnd - lexStart;  // lexEnd and lexStart on same line, so colNum would be still correct
+                colNum += lexEnd - lexStart;  /* lexEnd and lexStart on same line, so colNum would be still correct */
                 if (errLen > 0) {
                     tokType = TOKEN_UNKNOWN;
                     lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 }
             } else if (lookahead == ' ' || lookahead == '\t' || lookahead == '\r') {
-                // Whitespace, ignore 
+                /* Whitespace, ignore */
                 lexEnd++; colNum++;
             } else {
-                // Unknown
+                /* Unknown */
                 tokType = TOKEN_UNKNOWN;
-                sprintf(errMsg, "Unexpected character %c", lookahead);
+                snprintf(errMsg, MAX_ERRMSG_LEN, "Unexpected character %c", lookahead);
                 lexResultUpdate(lexResult, 1, errMsg, lineNum, colNum);
                 lexEnd++; colNum++;
             }
         }
 
         if (tokType != TOKEN_UNKNOWN) {
-            // INVARIANT: lexeme string is source[lexStart:lexEnd], where lexEnd is the start of the next lexeme.
-            size_t lexemeLen = lexEnd - lexStart;
+            /* INVARIANT: lexeme string is source[lexStart:lexEnd], where lexEnd is the start of the next lexeme. */
+            lexemeLen = lexEnd - lexStart;
 
-            // Add Token to list
+            /* Add Token to list */
             *tokenCount = *tokenCount + 1;
             *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
             (*tokensPtr)[*(tokenCount) - 1] = token_new(tokType, source + lexStart, lexemeLen, lineNum, colNum);
@@ -408,7 +421,7 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
         free(errMsg);
     }
 
-    // Add NL token, if it doesn't already end with one
+    /* Add NL token, if it doesn't already end with one */
     
     if (*tokenCount > 0 && (*tokensPtr)[*(tokenCount) - 1]->type != TOKEN_NL) {
         *tokenCount += 2;
@@ -421,6 +434,6 @@ void lex(const Token ***tokensPtr, size_t *tokenCount, const char *source, LexRe
         *tokensPtr = realloc(*tokensPtr, sizeof(Token *) * (*tokenCount));
     }
 
-    // Add EOF token
+    /* Add EOF token */
     (*tokensPtr)[*(tokenCount) - 1] = token_new(TOKEN_EOF, "", 0, lineNum+1, 0);
 }

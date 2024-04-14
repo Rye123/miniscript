@@ -15,13 +15,13 @@ typedef enum {
 
 static const char* ValueTypeString[] = {"TYPE_NUMBER", "TYPE_STRING", "TYPE_NULL", "TYPE_IDENTIFIER", "TYPE_FUNCTION", "TYPE_ERROR", "TYPE_UNASSIGNED"};
 
-// A function reference
+/* A function reference */
 typedef struct {
     ASTNode* argList;
     ASTNode* fnBlk;
 } FunctionRef;
 
-// A value that is assigned, or an identifier name.
+/* A value that is assigned, or an identifier name. */
 typedef struct {
     ValueType type;
     union {
@@ -32,25 +32,25 @@ typedef struct {
         FunctionRef* function_ref;
         Error* error_ptr;
     } value;
-    Token* tok; // Used to add context for the ExecValue
+    Token* tok; /* Used to add context for the ExecValue */
 } ExecValue;
 
 
-// Defines new ExecValues
-ExecValue* value_newNull();
+/* Defines new ExecValues */
+ExecValue* value_newNull(void);
 ExecValue* value_newString(char* strValue, Token* tokPtr);
 ExecValue* value_newNumber(double numValue, Token* tokPtr);
 ExecValue* value_newIdentifier(char *identifierName, Token* tokPtr);
 ExecValue* value_newError(Error *err, Token* tokPtr);
 ExecValue* value_newFunction(ASTNode* argList, ASTNode* block, Token* tokPtr);
 
-// Clones an ExecValue
+/* Clones an ExecValue */
 ExecValue* value_clone(ExecValue *val);
 
-// Frees an ExecValue
+/* Frees an ExecValue */
 void value_free(ExecValue *value);
 
-// Returns 0 if the value is FALSE, 1 if TRUE. -1 for an invalid type.
+/* Returns 0 if the value is FALSE, 1 if TRUE. -1 for an invalid type. */
 int value_falsiness(ExecValue *);
 
 /* Returns a NEW ExecValue* with the result of these operations.*/

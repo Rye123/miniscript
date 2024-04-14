@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "logger/logger.h"
 #include "interpreter.h"
 

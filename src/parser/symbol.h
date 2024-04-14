@@ -108,7 +108,7 @@ typedef enum {
     SYM_TERM, SYM_TERM_R,
     SYM_UNARY, SYM_POWER, SYM_PRIMARY,
     SYM_FN_CALL, SYM_FN_ARGS,
-    SYM_TERMINAL,
+    SYM_TERMINAL
 } SymbolType;
 
 static const char* SymbolTypeString[] = {
@@ -145,17 +145,17 @@ ASTNode *astnode_clone(ASTNode *node);
 void astnode_free(ASTNode *node);
 void astnode_print(ASTNode *node);
 
-// Adds token with type as a child of this node.
+/* Adds token with type as a child of this node. */
 void astnode_addChild(ASTNode *node, const SymbolType type, Token *tok);
 
 void astnode_addChildNode(ASTNode *parent, ASTNode *child);
 
-// Adds a symbol with type `expectedType` as a child of this node.
+/* Adds a symbol with type `expectedType` as a child of this node. */
 void astnode_addChildExp(ASTNode *node, const SymbolType expectedType);
 
 void astnode_clearChildren(ASTNode *node);
 
-// Converts from parse tree to AST (i.e. removes *_R nodes)
+/* Converts from parse tree to AST (i.e. removes *_R nodes) */
 ASTNode* astnode_gen(ASTNode *node);
 
 #endif

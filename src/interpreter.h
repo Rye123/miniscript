@@ -23,7 +23,7 @@ typedef enum {
     LEXING_ERROR,
     PARSING_ERROR,
     EXECUTING_ERROR,
-    CLEANING,
+    CLEANING
 } State;
 
 typedef struct {
@@ -34,7 +34,7 @@ void transition(FSM *fsm, int success);
 void initFSM(FSM *fsm);
 int runLine(const char *source, Context *executionContext, int asREPL);
 void runFile(const char* fname);
-void runREPL();
+void runREPL(void);
 
 #endif
 

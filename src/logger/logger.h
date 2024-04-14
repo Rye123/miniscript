@@ -14,7 +14,7 @@ extern Logger executionLogger;
 extern Logger consoleLogger;
 
 void log_message(Logger *logger, const char *format, ...);
-void init_loggers();
-void cleanup_loggers();
+void init_loggers(void);
+void cleanup_loggers(void);
 
-#endif // LOGGER_H
+#endif

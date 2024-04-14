@@ -44,7 +44,7 @@ int main()
     Token **tokens = malloc(sizeof(Token *) * 0);
     size_t tokenSz = 0;
 
-    // CASE 1
+    /* CASE 1 */
     char test1[] = "var 2";
     Token *expected1[] = {
 	token_new(TOKEN_IDENTIFIER, "var", 3, 0, 3),
@@ -56,7 +56,7 @@ int main()
     compare_lists(tokens, tokenSz, expected1);
     printf("\n---\n\n");
 
-    // CASE 2
+    /* CASE 2 */
     char test2[] = "a= 2.344+\n5.77n\t\"hello\"";
     resetTokens(&tokens, &tokenSz);
     Token *expected2[] = {
@@ -75,7 +75,7 @@ int main()
     compare_lists(tokens, tokenSz, expected2);
     printf("\n---\n\n");
 
-    // CASE 3:
+    /* CASE 3: */
     char test3[] = "22a\"b\"\n\n\t5.5.5.5\n";
     resetTokens(&tokens, &tokenSz);
     Token *expected3[] = {
@@ -95,7 +95,7 @@ int main()
     compare_lists(tokens, tokenSz, expected3);
     printf("\n---\n\n");
 
-    // Cleanup
+    /* Cleanup */
     resetTokens(&tokens, &tokenSz);
     free(tokens);
     freeTokenArr(expected1);
@@ -109,9 +109,6 @@ void compare_lists(Token **actual, size_t actualSz, Token **expected)
 {
     char passMsg[ERR_BUF_SZ];
     char errMsg[ERR_BUF_SZ];
-
-    char tokStr1[MAX_LEXEME_SIZE];
-    char tokStr2[MAX_LEXEME_SIZE];
 
     size_t i = 0;
     Token *actTok;
